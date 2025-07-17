@@ -1,6 +1,6 @@
----
-import '../styles/globals.css'
-
+--- 
+import Navbar from '../components/Navbar.astro';
+import '../styles/global.css'
 ---
 <html lang="es">
 	<head>
@@ -12,7 +12,7 @@ import '../styles/globals.css'
         <script is:inline src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
     </head>
 	<body>
-		<h1>Astro</h1>
+		<Navbar />
         <slot></slot>
 	</body>
 </html>

@@ -1,0 +1,45 @@
+---
+import '../styles/global.css';
+---
+
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>User - Picolalert</title>
+	</head>
+	<body>
+		<div class="flex h-screen bg-gray-100">
+			<aside class="w-64 bg-gray-800 text-white p-4">
+				<h2 class="text-2xl font-bold mb-6">User Panel</h2>
+				<nav>
+					<ul>
+						<li class="mb-2">
+							<a href="/user/dashboard" class="block hover:bg-gray-700 p-2 rounded">Dashboard</a>
+						</li>
+						<li class="mb-2">
+							<a href="/register-vehicle" class="block hover:bg-gray-700 p-2 rounded">Registrar Vehículo</a>
+						</li>
+						<li class="mb-2">
+							<a href="/user/pico-y-placa" class="block hover:bg-gray-700 p-2 rounded">Pico y Placa</a>
+						</li>
+						<li class="mb-2">
+							<a href="/user/pico-y-placa-details" class="block hover:bg-gray-700 p-2 rounded">Detalles Pico y Placa</a>
+						</li>
+						<li class="mb-2">
+							<a href="/user/notifications" class="block hover:bg-gray-700 p-2 rounded">Notificaciones</a>
+						</li>
+						<li class="mb-2 mt-8">
+							<a href="/" class="block hover:bg-gray-700 p-2 rounded bg-red-600">Cerrar Sesión</a>
+						</li>
+					</ul>
+				</nav>
+			</aside>
+			<main class="flex-1 p-6 overflow-y-auto">
+				<slot />
+			</main>
+		</div>
+	</body>
+</html>

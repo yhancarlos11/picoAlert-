@@ -1,0 +1,16 @@
+---
+import Layout from '../layout/layout.astro';
+import Button from '../components/Button.astro';
+---
+
+<Layout>
+    <section class="bg-white dark:bg-gray-900">
+        <div class="py-8 px-4 mx-auto max-w-screen-xl lg:py-16">
+            <h2 class="mb-4 text-4xl tracking-tight font-extrabold leading-tight text-gray-900 dark:text-white text-center">Iniciar Sesión</h2>
+            <div class="flex flex-col items-center justify-center space-y-4">
+                <Button text="User de Carros" url="/user/dashboard" />
+                <Button text="Admin" url="/admin/users" />
+            </div>
+        </div>
+    </section>
+</Layout>

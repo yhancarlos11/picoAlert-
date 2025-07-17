@@ -1,0 +1,27 @@
+---
+import UserLayout from '../../layout/user.astro';
+---
+
+<UserLayout>
+    <section class="bg-white dark:bg-gray-900">
+        <div class="py-8 px-4 mx-auto max-w-screen-xl lg:py-16">
+            <h2 class="mb-4 text-4xl tracking-tight font-extrabold leading-tight text-gray-900 dark:text-white">Bienvenido, Usuario</h2>
+            <p class="text-gray-500 dark:text-gray-400">Este es tu panel de control. Aquí podrás ver información relevante y acceder a tus opciones.</p>
+            <div class="mt-8">
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Opciones Rápidas</h3>
+                <ul class="mt-4 space-y-4">
+                    <li>
+                        <a href="/user/pico-y-placa" class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-900">
+                            Ver Pico y Placa Hoy
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/user/notifications" class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-900">
+                            Configurar Notificaciones
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </section>
+</UserLayout>
