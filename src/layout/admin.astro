@@ -1,5 +1,11 @@
 ---
 import '../styles/global.css';
+import Sidebar from '../components/Sidebar.astro';
+
+const adminLinks = [
+  { href: '/admin/users', text: 'Lista de Usuarios', icon: 'Users' },
+  { href: '/admin/pico-y-placa-rules', text: 'Gestión de Pico y Placa', icon: 'Settings' },
+];
 ---
 
 <html lang="es">
@@ -12,23 +18,8 @@ import '../styles/global.css';
 	</head>
 	<body>
 		<div class="flex h-screen bg-gray-100">
-			<aside class="w-64 bg-white text-gray-800 p-4 dark:bg-gray-800 dark:text-white">
-				<h2 class="text-2xl font-bold mb-6">Admin Panel</h2>
-				<nav>
-					<ul>
-						<li class="mb-2">
-							<a href="/admin/users" class="block hover:bg-gray-700 p-2 rounded">Lista de Usuarios</a>
-						</li>
-						<li class="mb-2">
-							<a href="/admin/pico-y-placa-rules" class="block hover:bg-gray-700 p-2 rounded">Gestión de Pico y Placa</a>
-						</li>
-						<li class="mb-2 mt-8">
-							<a href="/" class="block hover:bg-gray-700 p-2 rounded bg-red-600">Cerrar Sesión</a>
-						</li>
-					</ul>
-				</nav>
-			</aside>
-			<main class="flex-1 p-6 overflow-y-auto">
+			<Sidebar title="Admin Panel" links={adminLinks} />
+			<main class="flex-1 p-6 overflow-y-auto md:ml-64">
 				<slot />
 			</main>
 		</div>

@@ -42,6 +42,39 @@ All commands are run from the root of the project, from a terminal:
 | `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
 | `npm run astro -- --help` | Get help using the Astro CLI                     |
 
+## 🚀 Despliegue en Vercel
+
+Para desplegar este proyecto en Vercel, sigue estos pasos:
+
+1.  **Instala el adaptador de Vercel para Astro:**
+    ```bash
+    npm install @astrojs/vercel
+    ```
+
+2.  **Configura `astro.config.mjs`:**
+    Asegúrate de que tu archivo `astro.config.mjs` esté configurado para usar el adaptador de Vercel. Debería verse así:
+
+    ```javascript
+    import { defineConfig } from 'astro/config';
+    import vercel from '@astrojs/vercel/serverless';
+    import tailwindcss from '@tailwindcss/vite';
+
+    export default defineConfig({
+      output: 'server',
+      adapter: vercel(),
+      vite: {
+        plugins: [tailwindcss()]
+      }
+    });
+    ```
+
+3.  **Despliega en Vercel:**
+    *   Asegúrate de que tu proyecto esté en un repositorio de Git (GitHub, GitLab, Bitbucket).
+    *   Ve a tu [Vercel Dashboard](https://vercel.com/dashboard).
+    *   Haz clic en "Add New..." -> "Project".
+    *   Importa tu repositorio de Git.
+    *   Vercel debería detectar automáticamente que es un proyecto Astro y configurar los ajustes de build. Si te pregunta, asegúrate de que el comando de build sea `astro build` y el directorio de salida sea `dist`.
+
 ## 👀 Want to learn more?
 
 Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).

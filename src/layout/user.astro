@@ -1,5 +1,16 @@
 ---
 import '../styles/global.css';
+import Sidebar from '../components/Sidebar.astro';
+
+const userLinks = [
+  { href: '/user/dashboard', text: 'Dashboard', icon: 'Home' },
+  { href: '/user/register-vehicle', text: 'Registrar Vehículo', icon: 'Car' },
+  { href: '/user/vehicles', text: 'Mis Vehículos', icon: 'Car' },
+  { href: '/user/pico-y-placa', text: 'Pico y Placa', icon: 'Car' },
+  { href: '/user/pico-y-placa-details', text: 'Detalles Pico y Placa', icon: 'Car' },
+  { href: '/user/notifications', text: 'Notificaciones', icon: 'Settings' },
+  { href: '/user/calendar', text: 'Calendario', icon: 'Calendar' },
+];
 ---
 
 <html lang="es">
@@ -12,36 +23,8 @@ import '../styles/global.css';
 	</head>
 	<body>
 		<div class="flex h-screen bg-gray-100">
-			<aside class="w-64 bg-white text-gray-800 p-4 dark:bg-gray-800 dark:text-white">
-				<h2 class="text-2xl font-bold mb-6">User Panel</h2>
-				<nav>
-					<ul>
-						<li class="mb-2">
-							<a href="/user/dashboard" class="block hover:bg-gray-700 p-2 rounded">Dashboard</a>
-						</li>
-						<li class="mb-2">
-							<a href="/user/register-vehicle" class="block hover:bg-gray-700 p-2 rounded">Registrar Vehículo</a>
-						</li>
-						<li class="mb-2">
-							<a href="/user/vehicles" class="block hover:bg-gray-700 p-2 rounded">Mis Vehículos</a>
-						</li>
-						<li class="mb-2">
-							<a href="/user/pico-y-placa" class="block hover:bg-gray-700 p-2 rounded">Pico y Placa</a>
-						</li>
-						<li class="mb-2">
-							<a href="/user/pico-y-placa-details" class="block hover:bg-gray-700 p-2 rounded">Detalles Pico y Placa</a>
-						</li>
-						<li class="mb-2">
-							<a href="/user/calendar" class="block hover:bg-gray-700 p-2 rounded">Calendario</a>
-						</li>
-						
-						<li class="mb-2 mt-8">
-							<a href="/" class="block hover:bg-gray-700 p-2 rounded bg-red-600">Cerrar Sesión</a>
-						</li>
-					</ul>
-				</nav>
-			</aside>
-			<main class="flex-1 p-6 overflow-y-auto">
+			<Sidebar title="User Panel" links={userLinks} />
+			<main class="flex-1 p-6 overflow-y-auto md:ml-64">
 				<slot />
 			</main>
 		</div>
