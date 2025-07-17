@@ -1,8 +1,12 @@
 ---
 import Layout from "../layout/layout.astro";
+import { getVehiculos } from '../lib/api.js';
+
+const vehiculos = await getVehiculos();
+const vehiculoUsuario = vehiculos.length > 0 ? vehiculos[0] : null; // Tomamos el primer vehículo como ejemplo
 ---
 
-<Layout>
+<Layout title="Pico y Placa Hoy - PicoAlert+" description="Consulta las restricciones de pico y placa para hoy en Bogotá." keywords="pico y placa, hoy, Bogotá, restricciones, vehículos">
   <section class="bg-white dark:bg-gray-900">
     <div class="py-8 px-4 mx-auto max-w-screen-xl lg:py-16">
         <div class="mx-auto max-w-screen-sm text-center">

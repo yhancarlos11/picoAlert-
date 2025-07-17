@@ -1,6 +1,10 @@
---- 
-import Navbar from '../components/Navbar.astro';
-import '../styles/global.css'
+---
+import Navbar from "../components/Navbar.astro";
+import '../styles/global.css';
+
+const title = Astro.props.title || "PicoAlert+ - Notificaciones de Pico y Placa en Bogotá";
+const description = Astro.props.description || "Implementación de una API para notificación de pico y placa en Bogotá. Registra tu vehículo y recibe alertas en tiempo real.";
+const keywords = Astro.props.keywords || "pico y placa, Bogotá, notificaciones, vehículos, restricciones, movilidad, API, PicoAlert+";
 ---
 <html lang="es">
 	<head>
@@ -8,10 +12,37 @@ import '../styles/global.css'
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
+
+        <!-- SEO Meta Tags -->
+        <title>{title}</title>
+        <meta name="description" content={description} />
+        <meta name="keywords" content={keywords} />
+        <meta name="author" content="PicoAlert+" />
+
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={Astro.url.origin + Astro.url.pathname} />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:image" content={Astro.url.origin + "/hero.png"} />
+
+        <!-- Twitter -->
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content={Astro.url.origin + Astro.url.pathname} />
+        <meta property="twitter:title" content={title} />
+        <meta property="twitter:description" content={description} />
+        <meta property="twitter:image" content={Astro.url.origin + "/hero.png"} />
+
         <script is:inline src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
     </head>
 	<body>
+        <script is:inline>
+            // Eliminar la clase 'dark' del elemento html
+            document.documentElement.classList.remove('dark');
+            // Asegurarse de que Flowbite no cargue el modo oscuro desde localStorage
+            localStorage.removeItem('flowbite-theme-mode');
+            localStorage.removeItem('theme'); // Por si acaso se guardó con otra clave
+        </script>
 		<Navbar />
         <slot></slot>
 	</body>

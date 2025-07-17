@@ -1,6 +1,6 @@
 ---
-import Layout from '../../layout/layout.astro';
-import { getUser } from '../../lib/api.js';
+import AdminLayout from '../../../layout/admin.astro';
+import { getUser } from '../../../lib/api.js';
 
 export const prerender = false;
 
@@ -8,7 +8,7 @@ const { id } = Astro.params;
 const user = await getUser(id);
 ---
 
-<Layout>
+<AdminLayout>
     <section class="bg-white dark:bg-gray-900">
         <div class="py-8 px-4 mx-auto max-w-screen-xl lg:py-16">
             <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-md dark:bg-gray-800 dark:border-gray-700">
@@ -18,4 +18,4 @@ const user = await getUser(id);
             </div>
         </div>
     </section>
-</Layout>
+</AdminLayout>
