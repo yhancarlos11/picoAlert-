@@ -1,5 +1,6 @@
 ---
 import { Icons } from '../lib/icons.js';
+import LogoutButton from './LogoutButton.astro';
 
 const { title, links } = Astro.props;
 ---
@@ -17,10 +18,7 @@ const { title, links } = Astro.props;
 				</li>
 			))}
 			<li class="mb-2 mt-8">
-				<button id="sidebar-logout-btn" class="w-full flex items-center hover:bg-red-700 p-2 rounded bg-red-600 text-white">
-					<Fragment set:html={Icons.LogOut} />
-					<span class="ml-2">Cerrar Sesión</span>
-				</button>
+				<LogoutButton variant="sidebar" />
 			</li>
 		</ul>
 	</nav>
@@ -34,8 +32,6 @@ const { title, links } = Astro.props;
 </div>
 
 <script>
-  import { useAuthStore } from '../lib/auth-store.js';
-
   document.addEventListener('DOMContentLoaded', () => {
     // Manejo del menú móvil
     const mobileMenuButton = document.getElementById('mobile-menu-button');
@@ -45,17 +41,6 @@ const { title, links } = Astro.props;
       mobileMenuButton.addEventListener('click', () => {
         sidebar.classList.toggle('hidden');
         sidebar.classList.toggle('block');
-      });
-    }
-
-    // Manejo del botón de cerrar sesión
-    const logoutBtn = document.getElementById('sidebar-logout-btn');
-    
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', async () => {
-        const authStore = useAuthStore.getState();
-        await authStore.logout();
-        window.location.href = '/login';
       });
     }
   });

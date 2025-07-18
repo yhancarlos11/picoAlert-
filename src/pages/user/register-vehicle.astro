@@ -1,44 +1,22 @@
 ---
 import UserLayout from "../../layout/user.astro";
+import PageHeader from "../../components/PageHeader.astro";
+import StatusMessage from "../../components/StatusMessage.astro";
 ---
 
-<UserLayout>
+<UserLayout title="Registrar Vehículo - PicoAlert+" description="Registra un nuevo vehículo en PicoAlert+ para recibir notificaciones de Pico y Placa.">
     <section class="bg-white dark:bg-gray-900">
         <div class="py-8 px-4 mx-auto max-w-2xl lg:py-16">
-            <!-- Header -->
-            <div class="flex items-center justify-between mb-8">
-                <div>
-                    <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Registrar Nuevo Vehículo</h2>
-                    <p class="mt-2 text-gray-600 dark:text-gray-400">Agrega un vehículo para recibir notificaciones de Pico y Placa</p>
-                </div>
-                <a href="/user/dashboard" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                    </svg>
-                    Volver al Dashboard
-                </a>
-            </div>
+            <!-- Header utilizando el componente PageHeader -->
+            <PageHeader 
+                title="Registrar Nuevo Vehículo" 
+                description="Agrega un vehículo para recibir notificaciones de Pico y Placa"
+                backUrl="/user/dashboard"
+                backText="Volver al Dashboard"
+            />
 
-            <!-- Mensajes de estado -->
-            <div id="message-container" class="hidden mb-6">
-                <div id="success-message" class="hidden p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400">
-                    <div class="flex items-center">
-                        <svg class="flex-shrink-0 w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span id="success-text"></span>
-                    </div>
-                </div>
-                
-                <div id="error-message" class="hidden p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400">
-                    <div class="flex items-center">
-                        <svg class="flex-shrink-0 w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                        </svg>
-                        <span id="error-text"></span>
-                    </div>
-                </div>
-            </div>
+            <!-- Mensajes de estado utilizando el componente StatusMessage -->
+            <StatusMessage />
 
             <!-- Formulario -->
             <form id="vehicle-form" class="space-y-6">
@@ -186,7 +164,23 @@ import UserLayout from "../../layout/user.astro";
                     
                 } catch (error) {
                     console.error('Error registering vehicle:', error);
-                    showErrorMessage(error.message || 'Error al registrar el vehículo. Por favor, intenta de nuevo.');
+                    
+                    // Verificar si el error está relacionado con la autenticación
+                    if (error.message && (error.message.includes('sesión') || error.message.includes('autenticación') || error.message.includes('token'))) {
+                        // Mostrar un mensaje más específico
+                        showErrorMessage('Tu sesión ha expirado. Serás redirigido para iniciar sesión nuevamente.');
+                        
+                        // Redirigir después de 2 segundos
+                        setTimeout(() => {
+                            // Actualizar el estado de autenticación en el store
+                            const authStore = useAuthStore.getState();
+                            authStore.logout();
+                            window.location.href = '/login?session=expired';
+                        }, 2000);
+                    } else {
+                        // Para otros errores, mostrar el mensaje normal
+                        showErrorMessage(error.message || 'Error al registrar el vehículo. Por favor, intenta de nuevo.');
+                    }
                 } finally {
                     // Restaurar estado del botón
                     submitBtn.disabled = false;

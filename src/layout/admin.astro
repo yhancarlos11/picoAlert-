@@ -1,27 +1,32 @@
 ---
-import '../styles/global.css';
+import BaseLayout from './base.astro';
 import Sidebar from '../components/Sidebar.astro';
 
+// Enlaces para el panel de administrador
 const adminLinks = [
   { href: '/admin/users', text: 'Lista de Usuarios', icon: 'Users' },
   { href: '/admin/pico-y-placa-rules', text: 'Gestión de Pico y Placa', icon: 'Settings' },
 ];
+
+// Recibir props y pasarlas al layout base
+const { 
+  title = "Panel de Administrador - PicoAlert+",
+  description = "Panel de administración para PicoAlert+. Gestiona usuarios y reglas de Pico y Placa.",
+  keywords = "panel administrador, admin, usuarios, reglas, pico y placa, PicoAlert+",
+  ...restProps 
+} = Astro.props;
 ---
 
-<html lang="es">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/ico" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Admin - Picolalert</title>
-	</head>
-	<body>
-		<div class="flex h-screen bg-gray-100">
-			<Sidebar title="Admin Panel" links={adminLinks} />
-			<main class="flex-1 p-6 overflow-y-auto md:ml-64">
-				<slot />
-			</main>
-		</div>
-	</body>
-</html>
+<BaseLayout
+  title={title}
+  description={description}
+  keywords={keywords}
+  {...restProps}
+>
+  <div class="flex h-screen bg-white dark:bg-gray-900">
+    <Sidebar title="Panel de Administrador" links={adminLinks} />
+    <main class="flex-1 p-6 overflow-y-auto md:ml-64">
+      <slot />
+    </main>
+  </div>
+</BaseLayout>

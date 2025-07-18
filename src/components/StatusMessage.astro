@@ -1,0 +1,89 @@
+---
+// Componente para mostrar mensajes de estado (éxito/error)
+// Este componente se utiliza en las páginas para mostrar mensajes de éxito o error
+
+// Props que pueden ser pasadas al componente
+interface Props {
+  id?: string;
+  successId?: string;
+  errorId?: string;
+}
+
+const { 
+  id = 'message-container',
+  successId = 'success-message',
+  errorId = 'error-message'
+} = Astro.props;
+---
+
+<!-- Mensajes de estado -->
+<div id={id} class="hidden mb-6">
+  <div id={successId} class="hidden p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400">
+    <div class="flex items-center">
+      <svg class="flex-shrink-0 w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+      </svg>
+      <span id="success-text"></span>
+    </div>
+  </div>
+  
+  <div id={errorId} class="hidden p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400">
+    <div class="flex items-center">
+      <svg class="flex-shrink-0 w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+      </svg>
+      <span id="error-text"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Función para mostrar un mensaje de éxito
+  window.showSuccessMessage = function(message) {
+    const container = document.getElementById('message-container');
+    const successMessage = document.getElementById('success-message');
+    const errorMessage = document.getElementById('error-message');
+    const successText = document.getElementById('success-text');
+    
+    if (container && successMessage && errorMessage && successText) {
+      container.classList.remove('hidden');
+      successMessage.classList.remove('hidden');
+      errorMessage.classList.add('hidden');
+      successText.textContent = message;
+      
+      // Desplazarse al inicio de la página
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+  
+  // Función para mostrar un mensaje de error
+  window.showErrorMessage = function(message) {
+    const container = document.getElementById('message-container');
+    const successMessage = document.getElementById('success-message');
+    const errorMessage = document.getElementById('error-message');
+    const errorText = document.getElementById('error-text');
+    
+    if (container && successMessage && errorMessage && errorText) {
+      container.classList.remove('hidden');
+      successMessage.classList.add('hidden');
+      errorMessage.classList.remove('hidden');
+      errorText.textContent = message;
+      
+      // Desplazarse al inicio de la página
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+  
+  // Función para ocultar los mensajes
+  window.hideMessages = function() {
+    const container = document.getElementById('message-container');
+    const successMessage = document.getElementById('success-message');
+    const errorMessage = document.getElementById('error-message');
+    
+    if (container && successMessage && errorMessage) {
+      container.classList.add('hidden');
+      successMessage.classList.add('hidden');
+      errorMessage.classList.add('hidden');
+    }
+  };
+</script>

@@ -1,51 +1,26 @@
 ---
+import BaseLayout from "./base.astro";
 import Navbar from "../components/Navbar.astro";
-import '../styles/global.css';
 
-const title = Astro.props.title || "PicoAlert+ - Notificaciones de Pico y Placa en Bogotá";
-const description = Astro.props.description || "Implementación de una API para notificación de pico y placa en Bogotá. Registra tu vehículo y recibe alertas en tiempo real.";
-const keywords = Astro.props.keywords || "pico y placa, Bogotá, notificaciones, vehículos, restricciones, movilidad, API, PicoAlert+";
+// Recibir props y pasarlas al layout base
+const { 
+  title = "PicoAlert+ - Notificaciones de Pico y Placa en Bogotá",
+  description = "Implementación de una API para notificación de pico y placa en Bogotá. Registra tu vehículo y recibe alertas en tiempo real.",
+  keywords = "pico y placa, Bogotá, notificaciones, vehículos, restricciones, movilidad, API, PicoAlert+",
+  ...restProps 
+} = Astro.props;
 ---
-<html lang="es">
-	<head>
-		<meta charset="utf-8"/>
-		<link rel="icon" type="image/ico" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
 
-        <!-- SEO Meta Tags -->
-        <title>{title}</title>
-        <meta name="description" content={description} />
-        <meta name="keywords" content={keywords} />
-        <meta name="author" content="PicoAlert+" />
-
-        <!-- Open Graph / Facebook -->
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content={Astro.url.origin + Astro.url.pathname} />
-        <meta property="og:title" content={title} />
-        <meta property="og:description" content={description} />
-        <meta property="og:image" content={Astro.url.origin + "/Hero.jpg"} />
-
-        <!-- Twitter -->
-        <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:url" content={Astro.url.origin + Astro.url.pathname} />
-        <meta property="twitter:title" content={title} />
-        <meta property="twitter:description" content={description} />
-        <meta property="twitter:image" content={Astro.url.origin + "/Hero.jpg"} />
-
-        <script is:inline src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
-        <script is:inline>
-            // On page load or when changing themes, best to add inline in `head` to avoid FOUC
-            if (localStorage.getItem('color-theme') === 'dark') {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-        </script>
-    </head>
-	<body>
-        
-		<Navbar />
-        <slot></slot>
-	</body>
-</html>
+<BaseLayout 
+  title={title}
+  description={description}
+  keywords={keywords}
+  ogImage={Astro.url.origin + "/Hero.jpg"}
+  twitterImage={Astro.url.origin + "/Hero.jpg"}
+  {...restProps}
+>
+  <Navbar />
+  <main>
+    <slot />
+  </main>
+</BaseLayout>

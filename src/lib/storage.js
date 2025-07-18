@@ -3,6 +3,9 @@
  * Proporciona una capa de abstracción sobre sessionStorage y localStorage
  */
 
+// Verificar si estamos en el navegador (client-side) o en el servidor (server-side)
+const isBrowser = typeof window !== 'undefined' && typeof sessionStorage !== 'undefined';
+
 // Clave para almacenar los datos de autenticación
 const AUTH_KEY = 'picoalert-auth-session';
 
@@ -12,6 +15,8 @@ const AUTH_KEY = 'picoalert-auth-session';
  * @param {any} data - Datos a almacenar (se convertirán a JSON)
  */
 export const setSessionData = (key, data) => {
+  if (!isBrowser) return false;
+  
   try {
     sessionStorage.setItem(key, JSON.stringify(data));
     return true;
@@ -27,6 +32,8 @@ export const setSessionData = (key, data) => {
  * @returns {any|null} - Datos almacenados o null si no existen
  */
 export const getSessionData = (key) => {
+  if (!isBrowser) return null;
+  
   try {
     const data = sessionStorage.getItem(key);
     return data ? JSON.parse(data) : null;
@@ -41,6 +48,8 @@ export const getSessionData = (key) => {
  * @param {string} key - Clave a eliminar
  */
 export const removeSessionData = (key) => {
+  if (!isBrowser) return false;
+  
   try {
     sessionStorage.removeItem(key);
     return true;

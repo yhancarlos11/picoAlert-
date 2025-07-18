@@ -1,7 +1,8 @@
 ---
-import '../styles/global.css';
+import BaseLayout from './base.astro';
 import Sidebar from '../components/Sidebar.astro';
 
+// Enlaces para el panel de usuario
 const userLinks = [
   { href: '/user/dashboard', text: 'Dashboard', icon: 'Home' },
   { href: '/user/register-vehicle', text: 'Registrar Vehículo', icon: 'Car' },
@@ -11,22 +12,26 @@ const userLinks = [
   { href: '/user/notifications', text: 'Notificaciones', icon: 'Settings' },
   { href: '/user/calendar', text: 'Calendario', icon: 'Calendar' },
 ];
+
+// Recibir props y pasarlas al layout base
+const { 
+  title = "Panel de Usuario - PicoAlert+",
+  description = "Panel de control para usuarios de PicoAlert+. Gestiona tus vehículos y notificaciones de Pico y Placa.",
+  keywords = "panel usuario, dashboard, vehículos, notificaciones, pico y placa, PicoAlert+",
+  ...restProps 
+} = Astro.props;
 ---
 
-<html lang="es">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/ico" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>User - Picolalert</title>
-	</head>
-	<body>
-		<div class="flex h-screen bg-white dark:bg-gray-100">
-			<Sidebar title="User Panel" links={userLinks} />
-			<main class="flex-1 p-6 overflow-y-auto md:ml-64">
-				<slot />
-			</main>
-		</div>
-	</body>
-</html>
+<BaseLayout
+  title={title}
+  description={description}
+  keywords={keywords}
+  {...restProps}
+>
+  <div class="flex h-screen bg-white dark:bg-gray-900">
+    <Sidebar title="Panel de Usuario" links={userLinks} />
+    <main class="flex-1 p-6 overflow-y-auto md:ml-64">
+      <slot />
+    </main>
+  </div>
+</BaseLayout>

@@ -1,0 +1,91 @@
+---
+// Layout base que contiene los elementos comunes a todos los layouts
+// Este layout será utilizado por otros layouts para reducir la duplicación de código
+
+// Importar Flowbite
+import '../lib/flowbite.js';
+
+// Props que pueden ser pasadas al layout
+interface Props {
+  title?: string;
+  description?: string;
+  keywords?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
+  twitterTitle?: string;
+  twitterDescription?: string;
+  twitterImage?: string;
+}
+
+const {
+  title = "PicoAlert+ - Tu Aliado contra el Pico y Placa",
+  description = "Mantente informado y evita multas. Recibe notificaciones en tiempo real sobre las restricciones de Pico y Placa en Bogotá.",
+  keywords = "pico y placa, Bogotá, notificaciones, vehículos, restricciones, movilidad, PicoAlert+",
+  ogTitle = title,
+  ogDescription = description,
+  ogImage = "/images/og-image.jpg",
+  twitterTitle = title,
+  twitterDescription = description,
+  twitterImage = "/images/twitter-image.jpg",
+} = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="keywords" content={keywords} />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={Astro.url} />
+    <meta property="og:title" content={ogTitle} />
+    <meta property="og:description" content={ogDescription} />
+    <meta property="og:image" content={ogImage} />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={Astro.url} />
+    <meta property="twitter:title" content={twitterTitle} />
+    <meta property="twitter:description" content={twitterDescription} />
+    <meta property="twitter:image" content={twitterImage} />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    
+    <!-- Estilos globales -->
+    <link rel="stylesheet" href="/styles/global.css" />
+    
+    <!-- Slot para estilos adicionales específicos de cada layout -->
+    <slot name="head" />
+  </head>
+  <body class="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <!-- Contenido principal -->
+    <slot />
+    
+    <!-- Scripts comunes -->
+    <script is:inline>
+      // Inicializar Flowbite (ya importado vía npm en package.json)
+      document.addEventListener('DOMContentLoaded', function() {
+        // Flowbite ya está disponible globalmente a través de la instalación npm
+      });
+    </script>
+    
+    <!-- Script para manejar el tema oscuro/claro -->
+    <script>
+      // Verificar si el usuario tiene preferencia de tema
+      if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    </script>
+    
+    <!-- Slot para scripts adicionales específicos de cada layout -->
+    <slot name="scripts" />
+  </body>
+</html>

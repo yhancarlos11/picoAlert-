@@ -1,5 +1,6 @@
 ---
 import ThemeSwitcher from "./ThemeSwitcher.svelte";
+import LogoutButton from "./LogoutButton.astro";
 import { hasAuthSession, getAuthSession } from '../lib/storage.js';
 
 // Verificar si hay una sesión activa
@@ -19,7 +20,7 @@ const authData = isAuthenticated ? getAuthSession() : null;
                     <div class="flex items-center">
                         <a href="/user/dashboard" class="text-gray-800 dark:text-white hover:bg-gray-50 focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-4 lg:px-5 py-2 lg:py-2.5 mr-2 dark:hover:bg-gray-700 focus:outline-none dark:focus:ring-gray-800">Dashboard</a>
                         <a href="/user/vehicles" class="text-gray-800 dark:text-white hover:bg-gray-50 focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-4 lg:px-5 py-2 lg:py-2.5 mr-2 dark:hover:bg-gray-700 focus:outline-none dark:focus:ring-gray-800">Mis Vehículos</a>
-                        <button id="navbar-logout-btn" class="text-white bg-secondary-500 hover:bg-secondary-600 focus:ring-4 focus:ring-secondary-300 font-medium rounded-lg text-sm px-4 lg:px-5 py-2 lg:py-2.5 mr-2 dark:bg-secondary-600 dark:hover:bg-secondary-700 dark:focus:ring-secondary-800 shadow-md cursor-pointer">Cerrar Sesión</button>
+                        <LogoutButton variant="navbar" />
                     </div>
                 ) : (
                     <div class="flex items-center">

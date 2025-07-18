@@ -8,32 +8,32 @@ export default {
     extend: {
       colors: {
         primary: {
-          50: '#e6f7ff',  // Azul muy claro
-          100: '#bae7ff', // Azul claro
-          200: '#91d5ff', // Azul medio claro
-          300: '#69c0ff', // Azul medio
-          400: '#40a9ff', // Azul estándar
-          500: '#1890ff', // Azul principal (como en los mockups)
-          600: '#096dd9', // Azul oscuro
-          700: '#0050b3', // Azul muy oscuro
-          800: '#003a8c', // Azul extremadamente oscuro
-          900: '#002766', // Azul casi negro
-          950: '#001a4d', // Azul casi negro más profundo
+          50: 'var(--color-primary-50)',
+          100: 'var(--color-primary-100)',
+          200: 'var(--color-primary-200)',
+          300: 'var(--color-primary-300)',
+          400: 'var(--color-primary-400)',
+          500: 'var(--color-primary-500)',
+          600: 'var(--color-primary-600)',
+          700: 'var(--color-primary-700)',
+          800: 'var(--color-primary-800)',
+          900: 'var(--color-primary-900)',
+          950: 'var(--color-primary-950)',
         },
         secondary: {
-          50: '#e6fffb',  // Verde azulado muy claro
-          100: '#b5f5ec', // Verde azulado claro
-          200: '#87e8de', // Verde azulado medio claro
-          300: '#5cdbd3', // Verde azulado medio
-          400: '#36cfc9', // Verde azulado estándar
-          500: '#13c2c2', // Verde azulado principal (como en los mockups)
-          600: '#08979c', // Verde azulado oscuro
-          700: '#006d75', // Verde azulado muy oscuro
-          800: '#00474f', // Verde azulado extremadamente oscuro
-          900: '#002329', // Verde azulado casi negro
+          50: 'var(--color-secondary-50)',
+          100: 'var(--color-secondary-100)',
+          200: 'var(--color-secondary-200)',
+          300: 'var(--color-secondary-300)',
+          400: 'var(--color-secondary-400)',
+          500: 'var(--color-secondary-500)',
+          600: 'var(--color-secondary-600)',
+          700: 'var(--color-secondary-700)',
+          800: 'var(--color-secondary-800)',
+          900: 'var(--color-secondary-900)',
         },
-        picoGreen: '#13c2c2', // Verde azulado del logo (actualizado según mockups)
-        picoBlue: '#1890ff',  // Azul del logo (actualizado según mockups)
+        picoGreen: 'var(--color-secondary-500)', // Verde azulado del logo
+        picoBlue: 'var(--color-primary-500)',  // Azul del logo
       },
       fontFamily: {
         sans: ['Inter', ...defaultTheme.fontFamily.sans],
@@ -47,5 +47,5 @@ export default {
   },
   plugins: [
     require('flowbite/plugin')
-  ],
+  ]
 };

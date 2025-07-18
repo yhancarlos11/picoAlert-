@@ -1,20 +1,20 @@
 ---
 import UserLayout from '../../layout/user.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import StatusMessage from '../../components/StatusMessage.astro';
 ---
 
-<UserLayout>
+<UserLayout title="Dashboard - PicoAlert+" description="Panel de control para usuarios de PicoAlert+. Gestiona tus vehículos y notificaciones de Pico y Placa.">
     <section class="bg-white dark:bg-gray-900">
         <div class="py-8 px-4 mx-auto max-w-screen-xl lg:py-16">
-            <!-- Header con información del usuario -->
-            <div class="flex justify-between items-center mb-8">
-                <div>
-                    <h2 id="welcome-message" class="mb-2 text-4xl tracking-tight font-extrabold leading-tight text-gray-900 dark:text-white">Bienvenido</h2>
-                    <p class="text-gray-500 dark:text-gray-400">Gestiona tus vehículos y mantente informado sobre el Pico y Placa en Bogotá.</p>
-                </div>
-                <button id="logout-btn" class="px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                    Cerrar Sesión
-                </button>
-            </div>
+            <!-- Header con información del usuario utilizando el componente PageHeader -->
+            <PageHeader 
+                title="Bienvenido" 
+                description="Gestiona tus vehículos y mantente informado sobre el Pico y Placa en Bogotá."
+            />
+            
+            <!-- Mensajes de estado utilizando el componente StatusMessage -->
+            <StatusMessage />
 
             <!-- Resumen de vehículos -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

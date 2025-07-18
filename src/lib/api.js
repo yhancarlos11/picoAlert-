@@ -13,10 +13,26 @@ export async function login(email, password) {
         // El SDK de Directus espera 'password', no 'Clave'
         const result = await directus.login({ email, password });
         console.log('Login exitoso:', result);
+        
+        // Verificar que se haya obtenido un token válido
+        const token = await directus.getToken();
+        if (!token) {
+            throw new Error('No se pudo obtener un token de autenticación válido');
+        }
+        
         return { success: true, data: result };
     } catch (error) {
         console.error('Error en login:', error);
-        return { success: false, error: error.message };
+        
+        // Proporcionar mensajes de error más descriptivos
+        let errorMessage = error.message;
+        if (error.message.includes('credentials')) {
+            errorMessage = 'Credenciales incorrectas. Por favor, verifica tu email y contraseña.';
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+            errorMessage = 'Error de conexión. Por favor, verifica tu conexión a internet e intenta nuevamente.';
+        }
+        
+        return { success: false, error: errorMessage };
     }
 }
 
@@ -28,7 +44,9 @@ export async function logout() {
         return { success: true };
     } catch (error) {
         console.error('Error en logout:', error);
-        return { success: false, error: error.message };
+        // A pesar del error, consideramos el logout como exitoso desde el punto de vista del cliente
+        // ya que queremos limpiar el estado local de autenticación
+        return { success: true, warning: error.message };
     }
 }
 
@@ -38,7 +56,10 @@ export async function getCurrentUser() {
         const token = await directus.getToken();
         console.log('Token encontrado:', !!token);
         
-        if (!token) return null;
+        if (!token) {
+            console.log('No hay token disponible, usuario no autenticado');
+            return null;
+        }
         
         // Obtener información del usuario actual
         try {
@@ -54,7 +75,14 @@ export async function getCurrentUser() {
             };
         } catch (userError) {
             console.error('Error al obtener datos del usuario:', userError);
-            // Devolver un objeto con valores predeterminados para evitar undefined
+            
+            // Verificar si el error es de autenticación (401 o 403)
+            if (userError.message && (userError.message.includes('401') || userError.message.includes('403'))) {
+                console.log('Error de autenticación al obtener usuario, token inválido o expirado');
+                return null;
+            }
+            
+            // Para otros errores, devolver un objeto con valores predeterminados
             return { 
                 authenticated: true,
                 id: 'unknown',
@@ -74,8 +102,16 @@ export async function getCurrentUser() {
 async function makeAuthenticatedRequest(url, options = {}) {
     try {
         console.log('Realizando petición autenticada a:', url, 'con método:', options.method || 'GET');
-        const token = await directus.getToken();
-        console.log('Token disponible:', !!token);
+        
+        // Obtener token con manejo de errores
+        let token;
+        try {
+            token = await directus.getToken();
+            console.log('Token disponible:', !!token);
+        } catch (tokenError) {
+            console.error('Error al obtener token:', tokenError);
+            throw new Error('Error al obtener token de autenticación. Por favor, inicia sesión nuevamente.');
+        }
         
         const headers = {
             'Content-Type': 'application/json'
@@ -86,25 +122,61 @@ async function makeAuthenticatedRequest(url, options = {}) {
             console.log('Agregando token de autorización');
         } else {
             console.log('No hay token disponible, la petición no será autenticada');
+            // Si no hay token y la petición requiere autenticación, lanzar error
+            if (options.requireAuth !== false) {
+                throw new Error('No hay sesión activa. Por favor, inicia sesión nuevamente.');
+            }
         }
         
         console.log('Enviando petición con headers:', headers);
-        const response = await fetch(url, {
-            ...options,
-            headers: {
-                ...options.headers,
-                ...headers
-            }
-        });
+        
+        // Manejar errores de red
+        let response;
+        try {
+            response = await fetch(url, {
+                ...options,
+                headers: {
+                    ...options.headers,
+                    ...headers
+                }
+            });
+        } catch (networkError) {
+            console.error('Error de red en la petición:', networkError);
+            throw new Error('Error de conexión. Por favor, verifica tu conexión a internet e intenta nuevamente.');
+        }
         
         console.log('Respuesta recibida:', response.status, response.statusText);
         
         if (!response.ok) {
             console.error('Error en respuesta HTTP:', response.status, response.statusText);
+            
+            // Manejar errores específicos de autenticación
+            if (response.status === 401 || response.status === 403) {
+                throw new Error('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+            }
+            
+            // Intentar obtener más detalles del error
+            try {
+                const errorData = await response.json();
+                console.error('Detalles del error:', errorData);
+                if (errorData.errors && errorData.errors.length > 0) {
+                    throw new Error(errorData.errors[0].message || `Error HTTP: ${response.status}`);
+                }
+            } catch (parseError) {
+                // Si no se puede parsear la respuesta, usar el mensaje genérico
+                console.error('No se pudo parsear la respuesta de error:', parseError);
+            }
+            
             throw new Error(`Error HTTP: ${response.status}`);
         }
         
-        return await response.json();
+        // Parsear la respuesta con manejo de errores
+        try {
+            return await response.json();
+        } catch (parseError) {
+            console.error('Error al parsear la respuesta JSON:', parseError);
+            throw new Error('Error al procesar la respuesta del servidor.');
+        }
     } catch (error) {
         console.error('Error en petición autenticada:', error);
         throw error;
@@ -261,19 +333,24 @@ export async function getVehiculos() {
 
 export async function createVehiculo(data) {
     try {
+        console.log('Iniciando creación de vehículo:', data);
+        
         // Verificar si el usuario está autenticado
         const isAuth = await isAuthenticated();
         if (!isAuth) {
+            console.error('Usuario no autenticado al intentar crear vehículo');
             throw new Error('No hay sesión activa. Por favor, inicia sesión nuevamente.');
         }
         
         // Obtener el usuario actual usando la función segura
         const currentUser = await getCurrentUser();
         if (!currentUser || !currentUser.id || currentUser.id === 'unknown') {
+            console.error('No se pudo obtener información del usuario al crear vehículo');
             throw new Error('No se pudo obtener la información del usuario actual.');
         }
         
         const userId = currentUser.id;
+        console.log('Usuario identificado para crear vehículo:', userId);
         
         // Asociar el vehículo al usuario actual
         const vehicleData = {
@@ -281,11 +358,23 @@ export async function createVehiculo(data) {
             Usuario: userId // Asociar el vehículo al usuario actual
         };
         
-        const result = await makeAuthenticatedRequest('https://directus.bryanmedin4.com/items/Vehiculo', {
-            method: 'POST',
-            body: JSON.stringify(vehicleData)
-        });
-        return result.data;
+        try {
+            console.log('Enviando solicitud para crear vehículo:', vehicleData);
+            const result = await makeAuthenticatedRequest('https://directus.bryanmedin4.com/items/Vehiculo', {
+                method: 'POST',
+                body: JSON.stringify(vehicleData)
+            });
+            console.log('Vehículo creado exitosamente:', result.data);
+            return result.data;
+        } catch (requestError) {
+            // Verificar si el error es de autenticación (401 o 403)
+            if (requestError.message && (requestError.message.includes('401') || requestError.message.includes('403'))) {
+                console.error('Error de autenticación al crear vehículo:', requestError);
+                throw new Error('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+            }
+            console.error('Error en la solicitud al crear vehículo:', requestError);
+            throw requestError;
+        }
     } catch (error) {
         console.error('Error creating vehiculo:', error);
         throw error;
@@ -299,6 +388,20 @@ export async function isAuthenticated() {
         const token = await directus.getToken();
         const isAuth = !!token;
         console.log('¿Usuario autenticado?', isAuth);
+        
+        // Si hay token, verificar que sea válido intentando obtener el usuario actual
+        if (isAuth) {
+            try {
+                // Intentar obtener información del usuario para validar el token
+                await directus.users.me.read();
+                return true;
+            } catch (userError) {
+                console.error('Error al validar token:', userError);
+                // Si hay error al obtener el usuario, el token podría ser inválido
+                return false;
+            }
+        }
+        
         return isAuth;
     } catch (error) {
         console.error('Error al verificar autenticación:', error);

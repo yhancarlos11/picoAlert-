@@ -1,0 +1,59 @@
+---
+// Componente para el botón de cerrar sesión
+// Este componente se utiliza tanto en la barra de navegación como en la barra lateral
+
+// Props que pueden ser pasadas al componente
+interface Props {
+  variant?: 'navbar' | 'sidebar';
+  class?: string;
+}
+
+const { 
+  variant = 'navbar',
+  class: className = ''
+} = Astro.props;
+
+// Clases CSS según la variante
+let buttonClasses = '';
+
+if (variant === 'navbar') {
+  buttonClasses = 'text-white bg-secondary-500 hover:bg-secondary-600 focus:ring-4 focus:ring-secondary-300 font-medium rounded-lg text-sm px-4 lg:px-5 py-2 lg:py-2.5 mr-2 dark:bg-secondary-600 dark:hover:bg-secondary-700 dark:focus:ring-secondary-800 shadow-md cursor-pointer';
+} else if (variant === 'sidebar') {
+  buttonClasses = 'w-full flex items-center hover:bg-red-700 p-2 rounded bg-red-600 text-white';
+}
+
+// Combinar clases personalizadas con las clases predeterminadas
+const finalClasses = className ? `${buttonClasses} ${className}` : buttonClasses;
+
+// ID único según la variante
+const buttonId = variant === 'navbar' ? 'navbar-logout-btn' : 'sidebar-logout-btn';
+---
+
+<button id={buttonId} class={finalClasses}>
+  {variant === 'sidebar' && (
+    <span class="mr-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+      </svg>
+    </span>
+  )}
+  <span>Cerrar Sesión</span>
+</button>
+
+<script>
+  import { useAuthStore } from '../lib/auth-store.js';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // Obtener todos los botones de cerrar sesión
+    const logoutButtons = document.querySelectorAll('#navbar-logout-btn, #sidebar-logout-btn');
+    
+    // Agregar evento de clic a cada botón
+    logoutButtons.forEach(button => {
+      button.addEventListener('click', async () => {
+        const authStore = useAuthStore.getState();
+        await authStore.logout();
+        window.location.href = '/login';
+      });
+    });
+  });
+</script>
