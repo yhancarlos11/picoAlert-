@@ -14,8 +14,7 @@ const vehiculos = await getVehiculos();
                     vehiculos.map(vehiculo => (
                         <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-md dark:bg-gray-800 dark:border-gray-700">
                             <h3 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Placa: {vehiculo.Placa}</h3>
-                            <p class="mb-3 font-normal text-gray-700 dark:text-gray-400">Tipo: {vehiculo.Tipo_Vehiculo}</p>
-                            <p class="mb-3 font-normal text-gray-700 dark:text-gray-400">Combustible: {vehiculo.Combustible}</p>
+                            <p class="mb-3 font-normal text-gray-700 dark:text-gray-400">Tipo: {vehiculo.Tipo ? vehiculo.Tipo.replace('_', ' ') : 'No especificado'}</p>
                         </div>
                     ))
                 ) : (

@@ -1,83 +1,216 @@
 ---
-import Layout from "../layout/layout.astro";
-import { createUsuario } from "../lib/api.js";
-import { z } from 'zod';
-import Toast from '../components/Toast.astro';
-
-const userSchema = z.object({
-    nombre: z.string().min(1, "El nombre es requerido"),
-    correo: z.string().email("Correo inválido").min(1, "El correo es requerido"),
-    telefono: z.string().min(1, "El teléfono es requerido"),
-    ciudad: z.string().transform(Number).pipe(z.number().int().positive("Ciudad inválida")), // Asumiendo que ciudad es un ID numérico
-});
-
-let message = null;
-let messageType = null;
-
-if (Astro.request.method === "POST") {
-    try {
-        const formData = await Astro.request.formData();
-
-        const userData = userSchema.parse({
-            nombre: formData.get("nombre"),
-            correo: formData.get("correo"),
-            telefono: formData.get("telefono"),
-            ciudad: formData.get("ciudad"),
-        });
-
-        const newUser = await createUsuario({
-            Nombre: userData.nombre,
-            Correo: userData.correo,
-            Telefono: userData.telefono,
-            Ciudad: userData.ciudad,
-        });
-
-        message = "Usuario registrado exitosamente!";
-        messageType = "success";
-        // Redirigir a una página de éxito o al login
-        // return Astro.redirect("/login"); // Descomentar si se quiere redirigir inmediatamente
-    } catch (error) {
-        if (error instanceof z.ZodError) {
-            message = "Error de validación: " + error.errors.map(e => e.message).join(", ");
-            messageType = "error";
-        } else {
-            message = "Error al crear usuario: " + error.message;
-            messageType = "error";
-        }
-    }
-}
+import Layout from '../layout/layout.astro';
 ---
 
-<Layout title="Registro de Usuario - PicoAlert+" description="Regístrate en PicoAlert+ para recibir notificaciones personalizadas de pico y placa en Bogotá." keywords="registro, usuario, pico y placa, Bogotá, alerta, notificaciones">
-  <section class="bg-white dark:bg-gray-900">
-    <div class="py-8 px-4 mx-auto max-w-2xl lg:py-16">
-        <h2 class="mb-4 text-xl font-bold text-gray-900 dark:text-white">Registro de Usuario</h2>
-        
-        {message && <Toast message={message} type={messageType} />}
-
-        <form method="POST">
-            <div class="grid gap-4 sm:grid-cols-2 sm:gap-6">
-                <div class="sm:col-span-2">
-                    <label for="nombre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre</label>
-                    <input type="text" name="nombre" id="nombre" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="Ingresa tu nombre" required>
-                </div>
-                <div class="sm:col-span-2">
-                    <label for="correo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Correo</label>
-                    <input type="email" name="correo" id="correo" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="Ingresa tu correo" required>
-                </div>
-                <div class="w-full">
-                    <label for="telefono" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Teléfono</label>
-                    <input type="text" name="telefono" id="telefono" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="Ingresa tu teléfono" required>
-                </div>
-                <div class="w-full">
-                    <label for="ciudad" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Ciudad</label>
-                    <input type="text" name="ciudad" id="ciudad" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" value="1" readonly>
+<Layout title="Registro de Usuario - PicoAlert+" description="Regístrate en PicoAlert+ para gestionar tus vehículos y recibir notificaciones de Pico y Placa." keywords="registro, usuario, pico y placa, vehículos">
+    <section class="bg-white dark:bg-gray-900">
+        <div class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
+            <div class="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
+                <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
+                    <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
+                        Crear Cuenta en PicoAlert+
+                    </h1>
+                    
+                    <!-- Mensaje de error -->
+                    <div id="error-message" class="hidden p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+                        <span class="font-medium">Error:</span> <span id="error-text"></span>
+                    </div>
+                    
+                    <!-- Mensaje de éxito -->
+                    <div id="success-message" class="hidden p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400" role="alert">
+                        <span class="font-medium">Éxito:</span> <span id="success-text"></span>
+                    </div>
+                    
+                    <form id="register-form" class="space-y-4 md:space-y-6">
+                        <div>
+                            <label for="nombre" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nombre Completo</label>
+                            <input type="text" name="nombre" id="nombre" class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="Tu nombre completo" required>
+                        </div>
+                        
+                        <div>
+                            <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Email</label>
+                            <input type="email" name="email" id="email" class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="tu@email.com" required>
+                        </div>
+                        
+                        <div>
+                            <label for="telefono" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Teléfono</label>
+                            <input type="tel" name="telefono" id="telefono" class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="+57 300 123 4567" required>
+                        </div>
+                        
+                        <div>
+                            <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contraseña</label>
+                            <input type="password" name="password" id="password" placeholder="••••••••" class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" required>
+                        </div>
+                        
+                        <div>
+                            <label for="confirm-password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Confirmar Contraseña</label>
+                            <input type="password" name="confirm-password" id="confirm-password" placeholder="••••••••" class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" required>
+                        </div>
+                        
+                        <div class="flex items-start">
+                            <div class="flex items-center h-5">
+                                <input id="terms" aria-describedby="terms" type="checkbox" class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800" required>
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="terms" class="font-light text-gray-500 dark:text-gray-300">Acepto los <a class="font-medium text-primary-600 hover:underline dark:text-primary-500" href="/terminos-y-condiciones">Términos y Condiciones</a></label>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" id="register-button" class="w-full text-white bg-secondary-500 hover:bg-secondary-600 focus:ring-4 focus:outline-none focus:ring-secondary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-secondary-600 dark:hover:bg-secondary-700 dark:focus:ring-secondary-800 shadow-md cursor-pointer">
+                            <span id="register-text">Crear Cuenta</span>
+                            <span id="register-loading" class="hidden">
+                                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Creando cuenta...
+                            </span>
+                        </button>
+                        
+                        <p class="text-sm font-light text-gray-500 dark:text-gray-400">
+                            ¿Ya tienes una cuenta? <a href="/login" class="font-medium text-primary-600 hover:underline dark:text-primary-500">Inicia sesión aquí</a>
+                        </p>
+                    </form>
                 </div>
             </div>
-            <button type="submit" class="inline-flex items-center px-5 py-2.5 mt-4 sm:mt-6 text-sm font-medium text-center text-white bg-picoBlue rounded-lg focus:ring-4 focus:ring-primary-200 dark:focus:ring-primary-900 hover:bg-primary-800">
-                Registrarse
-            </button>
-        </form>
-    </div>
-  </section>
+        </div>
+    </section>
+
+    <script>
+        import { createUsuario } from '../lib/api.js';
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('register-form');
+            const errorMessage = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+            const successMessage = document.getElementById('success-message');
+            const successText = document.getElementById('success-text');
+            const registerButton = document.getElementById('register-button');
+            const registerText = document.getElementById('register-text');
+            const registerLoading = document.getElementById('register-loading');
+            
+            // Función para mostrar error
+            function showError(message) {
+                errorText.textContent = message;
+                errorMessage.classList.remove('hidden');
+                successMessage.classList.add('hidden');
+            }
+            
+            // Función para mostrar éxito
+            function showSuccess(message) {
+                successText.textContent = message;
+                successMessage.classList.remove('hidden');
+                errorMessage.classList.add('hidden');
+            }
+            
+            // Función para ocultar mensajes
+            function hideMessages() {
+                errorMessage.classList.add('hidden');
+                successMessage.classList.add('hidden');
+            }
+            
+            // Función para mostrar loading
+            function setLoading(loading) {
+                if (loading) {
+                    registerText.classList.add('hidden');
+                    registerLoading.classList.remove('hidden');
+                    registerButton.disabled = true;
+                } else {
+                    registerText.classList.remove('hidden');
+                    registerLoading.classList.add('hidden');
+                    registerButton.disabled = false;
+                }
+            }
+            
+            // Validar contraseñas
+            function validatePasswords(password, confirmPassword) {
+                if (password !== confirmPassword) {
+                    return 'Las contraseñas no coinciden';
+                }
+                if (password.length < 6) {
+                    return 'La contraseña debe tener al menos 6 caracteres';
+                }
+                return null;
+            }
+            
+            // Manejar envío del formulario
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                hideMessages();
+                
+                const formData = new FormData(form);
+                const nombre = formData.get('nombre');
+                const email = formData.get('email');
+                const telefono = formData.get('telefono');
+                const password = formData.get('password');
+                const confirmPassword = formData.get('confirm-password');
+                
+                // Validar contraseñas
+                const passwordError = validatePasswords(password, confirmPassword);
+                if (passwordError) {
+                    showError(passwordError);
+                    return;
+                }
+                
+                setLoading(true);
+                
+                try {
+                    console.log('Preparando datos de usuario para registro');
+                    const userData = {
+                        Nombre: nombre,
+                        Correo: email,
+                        Telefono: telefono,
+                        Clave: password,
+                        Ciudad: 1 // Bogotá por defecto
+                    };
+                    console.log('Datos de usuario preparados:', { ...userData, Clave: '***OCULTA***' });
+                    
+                    console.log('Llamando a createUsuario');
+                    const result = await createUsuario(userData);
+                    console.log('Resultado de createUsuario:', result);
+                    
+                    if (result) {
+                        console.log('Registro exitoso, mostrando mensaje de éxito');
+                        showSuccess('Cuenta creada exitosamente. Redirigiendo al login...');
+                        
+                        // Limpiar formulario
+                        form.reset();
+                        console.log('Formulario limpiado');
+                        
+                        // Redirigir después de un breve delay
+                        console.log('Configurando redirección a login');
+                        setTimeout(() => {
+                            console.log('Redirigiendo a login');
+                            window.location.href = '/login';
+                        }, 2000);
+                    } else {
+                        console.error('Resultado de createUsuario es nulo o indefinido');
+                        showError('Error al crear la cuenta. Por favor, intenta de nuevo.');
+                    }
+                } catch (error) {
+                    console.error('Error durante el registro:', error);
+                    console.error('Detalles del error:', {
+                        mensaje: error.message,
+                        nombre: error.name,
+                        código: error.code,
+                        stack: error.stack
+                    });
+                    
+                    // Manejar errores específicos
+                    if (error.message.includes('email') || error.message.includes('Correo')) {
+                        console.log('Error detectado: Email ya registrado');
+                        showError('Este email ya está registrado. Por favor, usa otro email.');
+                    } else if (error.message.includes('400')) {
+                        console.log('Error detectado: Datos inválidos (400)');
+                        showError('Datos inválidos. Por favor, verifica la información.');
+                    } else {
+                        console.log('Error general de conexión');
+                        showError('Error de conexión. Por favor, intenta de nuevo.');
+                    }
+                } finally {
+                    setLoading(false);
+                }
+            });
+        });
+    </script>
 </Layout>

@@ -9,7 +9,7 @@ const keywords = Astro.props.keywords || "pico y placa, Bogotá, notificaciones,
 <html lang="es">
 	<head>
 		<meta charset="utf-8"/>
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" type="image/ico" href="/favicon.ico" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
 
@@ -24,25 +24,27 @@ const keywords = Astro.props.keywords || "pico y placa, Bogotá, notificaciones,
         <meta property="og:url" content={Astro.url.origin + Astro.url.pathname} />
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
-        <meta property="og:image" content={Astro.url.origin + "/hero.png"} />
+        <meta property="og:image" content={Astro.url.origin + "/Hero.jpg"} />
 
         <!-- Twitter -->
         <meta property="twitter:card" content="summary_large_image" />
         <meta property="twitter:url" content={Astro.url.origin + Astro.url.pathname} />
         <meta property="twitter:title" content={title} />
         <meta property="twitter:description" content={description} />
-        <meta property="twitter:image" content={Astro.url.origin + "/hero.png"} />
+        <meta property="twitter:image" content={Astro.url.origin + "/Hero.jpg"} />
 
         <script is:inline src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
+        <script is:inline>
+            // On page load or when changing themes, best to add inline in `head` to avoid FOUC
+            if (localStorage.getItem('color-theme') === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        </script>
     </head>
 	<body>
-        <script is:inline>
-            // Eliminar la clase 'dark' del elemento html
-            document.documentElement.classList.remove('dark');
-            // Asegurarse de que Flowbite no cargue el modo oscuro desde localStorage
-            localStorage.removeItem('flowbite-theme-mode');
-            localStorage.removeItem('theme'); // Por si acaso se guardó con otra clave
-        </script>
+        
 		<Navbar />
         <slot></slot>
 	</body>

@@ -5,22 +5,22 @@ const { title, links } = Astro.props;
 ---
 
 <aside class="w-64 bg-white text-gray-800 p-4 dark:bg-gray-800 dark:text-white fixed h-full hidden md:block">
-	<h2 class="text-2xl font-bold mb-6">{title}</h2>
+	<h2 class="text-2xl font-bold mb-6 text-primary-500 dark:text-primary-300">{title}</h2>
 	<nav>
 		<ul>
 			{links.map(link => (
 				<li class="mb-2">
-					<a href={link.href} class="flex items-center hover:bg-gray-200 dark:hover:bg-gray-700 p-2 rounded">
+					<a href={link.href} class="flex items-center hover:bg-primary-50 dark:hover:bg-gray-700 p-2 rounded text-gray-700 hover:text-primary-500 dark:text-gray-300 dark:hover:text-primary-300">
 						<Fragment set:html={Icons[link.icon]} />
 						<span class="ml-2">{link.text}</span>
 					</a>
 				</li>
 			))}
 			<li class="mb-2 mt-8">
-				<a href="/" class="flex items-center hover:bg-red-700 p-2 rounded bg-red-600 text-white">
+				<button id="sidebar-logout-btn" class="w-full flex items-center hover:bg-red-700 p-2 rounded bg-red-600 text-white">
 					<Fragment set:html={Icons.LogOut} />
 					<span class="ml-2">Cerrar Sesión</span>
-				</a>
+				</button>
 			</li>
 		</ul>
 	</nav>
@@ -33,14 +33,30 @@ const { title, links } = Astro.props;
   </button>
 </div>
 
-<script is:inline>
-  const mobileMenuButton = document.getElementById('mobile-menu-button');
-  const sidebar = document.querySelector('aside');
+<script>
+  import { useAuthStore } from '../lib/auth-store.js';
 
-  if (mobileMenuButton && sidebar) {
-    mobileMenuButton.addEventListener('click', () => {
-      sidebar.classList.toggle('hidden');
-      sidebar.classList.toggle('block');
-    });
-  }
+  document.addEventListener('DOMContentLoaded', () => {
+    // Manejo del menú móvil
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const sidebar = document.querySelector('aside');
+
+    if (mobileMenuButton && sidebar) {
+      mobileMenuButton.addEventListener('click', () => {
+        sidebar.classList.toggle('hidden');
+        sidebar.classList.toggle('block');
+      });
+    }
+
+    // Manejo del botón de cerrar sesión
+    const logoutBtn = document.getElementById('sidebar-logout-btn');
+    
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', async () => {
+        const authStore = useAuthStore.getState();
+        await authStore.logout();
+        window.location.href = '/login';
+      });
+    }
+  });
 </script>

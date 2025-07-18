@@ -5,38 +5,320 @@ import UserLayout from '../../layout/user.astro';
 <UserLayout>
     <section class="bg-white dark:bg-gray-900">
         <div class="py-8 px-4 mx-auto max-w-screen-xl lg:py-16">
-            <h2 class="mb-4 text-4xl tracking-tight font-extrabold leading-tight text-gray-900 dark:text-white">Bienvenido, Usuario</h2>
-            <p class="text-gray-500 dark:text-gray-400">Este es tu panel de control. Aquí podrás ver información relevante y acceder a tus opciones.</p>
+            <!-- Header con información del usuario -->
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h2 id="welcome-message" class="mb-2 text-4xl tracking-tight font-extrabold leading-tight text-gray-900 dark:text-white">Bienvenido</h2>
+                    <p class="text-gray-500 dark:text-gray-400">Gestiona tus vehículos y mantente informado sobre el Pico y Placa en Bogotá.</p>
+                </div>
+                <button id="logout-btn" class="px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                    Cerrar Sesión
+                </button>
+            </div>
+
+            <!-- Resumen de vehículos -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white dark:bg-blue-900/20 p-6 rounded-lg border border-blue-100 dark:border-blue-800 shadow-sm">
+                    <h3 class="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">Mis Vehículos</h3>
+                    <p id="vehicle-count" class="text-3xl font-bold text-blue-600 dark:text-blue-400">-</p>
+                    <p class="text-sm text-blue-700 dark:text-blue-300">Vehículos registrados</p>
+                </div>
+                
+                <div class="bg-white dark:bg-green-900/20 p-6 rounded-lg border border-green-100 dark:border-green-800 shadow-sm">
+                    <h3 class="text-lg font-semibold text-green-900 dark:text-green-100 mb-2">Estado Hoy</h3>
+                    <p id="pico-status" class="text-3xl font-bold text-green-600 dark:text-green-400">-</p>
+                    <p class="text-sm text-green-700 dark:text-green-300">Pico y Placa</p>
+                </div>
+                
+                <div class="bg-white dark:bg-yellow-900/20 p-6 rounded-lg border border-yellow-100 dark:border-yellow-800 shadow-sm">
+                    <h3 class="text-lg font-semibold text-yellow-900 dark:text-yellow-100 mb-2">Próxima Restricción</h3>
+                    <p id="next-restriction" class="text-lg font-bold text-yellow-600 dark:text-yellow-400">-</p>
+                    <p class="text-sm text-yellow-700 dark:text-yellow-300">Para tus vehículos</p>
+                </div>
+            </div>
+
+            <!-- Vehículos recientes -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Mis Vehículos</h3>
+                    <a href="/user/register-vehicle" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-secondary-500 rounded-lg hover:bg-secondary-600 focus:ring-4 focus:ring-secondary-300 dark:focus:ring-secondary-700 shadow-md cursor-pointer">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Agregar Vehículo
+                    </a>
+                </div>
+                
+                <div id="vehicles-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Los vehículos se cargarán dinámicamente -->
+                    <div id="loading-vehicles" class="col-span-full text-center py-8">
+                        <div class="inline-flex items-center px-4 py-3 font-semibold leading-6 text-sm rounded-md text-gray-600 bg-white border border-gray-200 shadow-sm dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 transition ease-in-out duration-150">
+                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Cargando vehículos...
+                        </div>
+                    </div>
+                    
+                    <div id="no-vehicles" class="hidden col-span-full text-center py-8">
+                        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-8 shadow-sm max-w-md mx-auto">
+                            <svg class="mx-auto h-12 w-12 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">No tienes vehículos registrados</h3>
+                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Comienza registrando tu primer vehículo.</p>
+                            <div class="mt-6">
+                                <a href="/user/register-vehicle" class="inline-flex items-center px-4 py-2 border border-transparent shadow-md text-sm font-medium rounded-md text-white bg-secondary-500 hover:bg-secondary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary-300 transition-colors duration-200 cursor-pointer">
+                                    <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                    Registrar Vehículo
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Opciones rápidas -->
             <div class="mt-8">
-                <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Opciones Rápidas</h3>
-                <ul class="mt-4 space-y-4">
-                    <li>
-                        <a href="/user/register-vehicle" class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-900">
-                            Registrar Nuevo Vehículo
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/user/vehicles" class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-900">
-                            Ver Mis Vehículos
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/user/pico-y-placa" class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-900">
-                            Ver Pico y Placa Hoy
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/user/notifications" class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-900">
-                            Configurar Notificaciones
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/user/calendar" class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-900">
-                            Ver Calendario
-                        </a>
-                    </li>
-                </ul>
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Opciones Rápidas</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <a href="/user/pico-y-placa" class="flex items-center p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 transition-all duration-200">
+                        <div class="flex-shrink-0">
+                            <svg class="w-8 h-8 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-semibold text-gray-900 dark:text-white">Pico y Placa Hoy</h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Ver restricciones actuales</p>
+                        </div>
+                    </a>
+                    
+                    <a href="/user/vehicles" class="flex items-center p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 transition-all duration-200">
+                        <div class="flex-shrink-0">
+                            <svg class="w-8 h-8 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-semibold text-gray-900 dark:text-white">Gestionar Vehículos</h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Ver y editar tus vehículos</p>
+                        </div>
+                    </a>
+                    
+                    <a href="/user/notifications" class="flex items-center p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 transition-all duration-200">
+                        <div class="flex-shrink-0">
+                            <svg class="w-8 h-8 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM4 19h6v-2H4v2zM4 15h8v-2H4v2zM4 11h8V9H4v2z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-semibold text-gray-900 dark:text-white">Notificaciones</h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Configurar alertas</p>
+                        </div>
+                    </a>
+                    
+                    <a href="/user/calendar" class="flex items-center p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 transition-all duration-200">
+                        <div class="flex-shrink-0">
+                            <svg class="w-8 h-8 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="text-lg font-semibold text-gray-900 dark:text-white">Calendario</h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Ver restricciones futuras</p>
+                        </div>
+                    </a>
+                </div>
             </div>
         </div>
     </section>
+
+    <script>
+        import { useAuthStore } from '../../lib/auth-store.js';
+        import { getVehiculos, getReglasPicoYPlaca } from '../../lib/api.js';
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const authStore = useAuthStore.getState();
+            
+            // Verificar autenticación
+            if (!authStore.isAuthenticated) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            // Obtener información del usuario
+            const currentUser = authStore.user;
+            if (currentUser) {
+                // Asegurarse de que siempre haya un nombre para mostrar
+                let displayName = 'Usuario';
+                
+                // Usar nombre completo si están disponibles first_name y last_name
+                if (currentUser.first_name && currentUser.last_name) {
+                    displayName = `${currentUser.first_name} ${currentUser.last_name}`;
+                } else if (currentUser.first_name) {
+                    displayName = currentUser.first_name;
+                } else if (currentUser.name) {
+                    displayName = currentUser.name;
+                } else if (currentUser.email) {
+                    displayName = currentUser.email;
+                }
+                
+                document.getElementById('welcome-message').textContent = `Bienvenido, ${displayName}`;
+            }
+            
+            // Configurar logout
+            document.getElementById('logout-btn').addEventListener('click', async () => {
+                await authStore.logout();
+                window.location.href = '/login';
+            });
+            
+            // Cargar vehículos del usuario
+            await loadUserVehicles();
+            
+            // Cargar información de Pico y Placa
+            await loadPicoYPlacaInfo();
+        });
+        
+        async function loadUserVehicles() {
+            try {
+                const vehiclesContainer = document.getElementById('vehicles-container');
+                const loadingElement = document.getElementById('loading-vehicles');
+                const noVehiclesElement = document.getElementById('no-vehicles');
+                const vehicleCountElement = document.getElementById('vehicle-count');
+                
+                // Verificar autenticación antes de intentar cargar vehículos
+                if (!authStore.isAuthenticated) {
+                    console.log('Usuario no autenticado, no se cargarán vehículos');
+                    loadingElement.classList.add('hidden');
+                    noVehiclesElement.classList.remove('hidden');
+                    return;
+                }
+                
+                const vehicles = await getVehiculos();
+                
+                loadingElement.classList.add('hidden');
+                
+                if (vehicles && vehicles.length > 0) {
+                    vehicleCountElement.textContent = vehicles.length;
+                    noVehiclesElement.classList.add('hidden');
+                    
+                    // Mostrar solo los primeros 3 vehículos en el dashboard
+                    const displayVehicles = vehicles.slice(0, 3);
+                    
+                    displayVehicles.forEach(vehicle => {
+                        const vehicleCard = createVehicleCard(vehicle);
+                        vehiclesContainer.appendChild(vehicleCard);
+                    });
+                    
+                    if (vehicles.length > 3) {
+                        const moreCard = createMoreVehiclesCard(vehicles.length - 3);
+                        vehiclesContainer.appendChild(moreCard);
+                    }
+                } else {
+                    vehicleCountElement.textContent = '0';
+                    noVehiclesElement.classList.remove('hidden');
+                    console.log('No se encontraron vehículos para este usuario');
+                }
+            } catch (error) {
+                console.error('Error loading vehicles:', error);
+                document.getElementById('loading-vehicles').classList.add('hidden');
+                document.getElementById('vehicle-count').textContent = '0';
+                document.getElementById('no-vehicles').classList.remove('hidden');
+                console.error('Detalles del error:', error.message);
+            }
+        }
+        
+        function createVehicleCard(vehicle) {
+            const card = document.createElement('div');
+            card.className = 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow';
+            
+            card.innerHTML = `
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="text-lg font-semibold text-gray-900 dark:text-white">${vehicle.Placa}</h4>
+                    <span class="px-2 py-1 text-xs font-medium rounded-full ${
+                        vehicle.Tipo.includes('Carro') ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
+                        vehicle.Tipo === 'Moto' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
+                        'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300'
+                    }">
+                        ${vehicle.Tipo.replace('_', ' ')}
+                    </span>
+                </div>
+            `;
+            
+            return card;
+        }
+        
+        function createMoreVehiclesCard(count) {
+            const card = document.createElement('div');
+            card.className = 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-200';
+            
+            card.innerHTML = `
+                <a href="/user/vehicles" class="text-center">
+                    <div class="text-gray-400 dark:text-gray-500 mb-2">
+                        <svg class="mx-auto h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                    </div>
+                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">+${count} vehículos más</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-500">Ver todos</p>
+                </a>
+            `;
+            
+            return card;
+        }
+        
+        async function loadPicoYPlacaInfo() {
+            try {
+                const picoStatusElement = document.getElementById('pico-status');
+                const nextRestrictionElement = document.getElementById('next-restriction');
+                
+                // Verificar autenticación antes de intentar cargar reglas
+                if (!authStore.isAuthenticated) {
+                    console.log('Usuario no autenticado, intentando cargar reglas públicas');
+                }
+                
+                const rules = await getReglasPicoYPlaca();
+                
+                if (!rules || rules.length === 0) {
+                    console.log('No se encontraron reglas de Pico y Placa');
+                    picoStatusElement.textContent = 'Sin datos';
+                    picoStatusElement.className = 'text-3xl font-bold text-gray-600 dark:text-gray-400';
+                    nextRestrictionElement.textContent = 'Sin datos';
+                    return;
+                }
+                
+                const today = new Date();
+                const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+                
+                // Encontrar regla para hoy
+                const todayRule = rules.find(rule => {
+                    // Aquí deberías implementar la lógica para determinar si aplica hoy
+                    // basado en los campos de la regla
+                    return true; // Placeholder
+                });
+                
+                if (todayRule) {
+                    picoStatusElement.textContent = 'Activo';
+                    picoStatusElement.className = 'text-3xl font-bold text-red-600 dark:text-red-400';
+                } else {
+                    picoStatusElement.textContent = 'Libre';
+                    picoStatusElement.className = 'text-3xl font-bold text-green-600 dark:text-green-400';
+                }
+                
+                // Calcular próxima restricción (placeholder)
+                nextRestrictionElement.textContent = 'Mañana';
+                
+            } catch (error) {
+                console.error('Error loading Pico y Placa info:', error);
+                console.error('Detalles del error:', error.message);
+                document.getElementById('pico-status').textContent = 'Error';
+                document.getElementById('pico-status').className = 'text-3xl font-bold text-gray-600 dark:text-gray-400';
+                document.getElementById('next-restriction').textContent = 'Error';
+            }
+        }
+    </script>
 </UserLayout>

@@ -7,12 +7,12 @@ import Layout from "../layout/layout.astro";
   <section class="bg-white dark:bg-gray-900">
     <div class="py-8 px-4 mx-auto max-w-screen-xl text-center lg:py-16">
       <div class="flex justify-center mb-8">
-        <img src="/hero.png" alt="Pico y Placa" class="rounded-lg max-w-full h-auto lg:max-w-4xl shadow-lg">
+        <video src="/Hero.webm" alt="Pico y Placa" class="rounded-lg max-w-full h-auto lg:max-w-4xl shadow-lg" autoplay loop muted playsinline></video>
       </div>
       <h1 class="mb-4 text-4xl font-extrabold tracking-tight leading-none text-gray-900 md:text-5xl lg:text-6xl dark:text-white">PicoAlert+: Tu Aliado contra el Pico y Placa</h1>
       <p class="mb-8 text-lg font-normal text-gray-500 lg:text-xl sm:px-16 lg:px-48 dark:text-gray-400">Mantente informado y evita multas. Recibe notificaciones en tiempo real sobre las restricciones de Pico y Placa en Bogotá.</p>
       <div class="flex flex-col space-y-4 sm:flex-row sm:justify-center sm:space-y-0 sm:space-x-4">
-        <a href="/register-user" class="inline-flex justify-center items-center py-3 px-5 text-base font-medium text-center text-white rounded-lg bg-picoBlue hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-900">
+        <a href="/register-user" class="inline-flex justify-center items-center py-3 px-5 text-base font-medium text-center text-white rounded-lg bg-primary-900 hover:bg-primary-950 focus:ring-4 focus:ring-primary-700 dark:focus:ring-primary-800 shadow-md cursor-pointer hover:animate-bounce transition-all duration-300">
           Regístrate Gratis
           <svg class="w-3.5 h-3.5 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
@@ -34,22 +34,22 @@ import Layout from "../layout/layout.astro";
       </div>
       <div class="space-y-8 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-12 md:space-y-0">
         <div>
-          <div class="flex justify-center items-center mb-4 w-10 h-10 rounded-full bg-blue-100 lg:h-12 lg:w-12 dark:bg-blue-900">
-            <svg class="w-5 h-5 text-picoBlue lg:w-6 lg:h-6 dark:text-blue-300" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L11 9.586V6z" clip-rule="evenodd"></path></svg>
+          <div class="flex justify-center items-center mb-4 w-10 h-10 rounded-full bg-primary-100 lg:h-12 lg:w-12 dark:bg-primary-800">
+            <svg class="w-5 h-5 text-primary-500 lg:w-6 lg:h-6 dark:text-primary-300" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l3 3a1 1 0 001.414-1.414L11 9.586V6z" clip-rule="evenodd"></path></svg>
           </div>
           <h3 class="mb-2 text-xl font-bold dark:text-white">Notificaciones en Tiempo Real</h3>
           <p class="text-gray-500 dark:text-gray-400">Recibe alertas instantáneas sobre las restricciones de Pico y Placa para tu vehículo.</p>
         </div>
         <div>
-          <div class="flex justify-center items-center mb-4 w-10 h-10 rounded-full bg-blue-100 lg:h-12 lg:w-12 dark:bg-blue-900">
-            <svg class="w-5 h-5 text-picoBlue lg:w-6 lg:h-6 dark:text-blue-300" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
+          <div class="flex justify-center items-center mb-4 w-10 h-10 rounded-full bg-secondary-100 lg:h-12 lg:w-12 dark:bg-secondary-800">
+            <svg class="w-5 h-5 text-secondary-500 lg:w-6 lg:h-6 dark:text-secondary-300" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path></svg>
           </div>
           <h3 class="mb-2 text-xl font-bold dark:text-white">Registro Sencillo</h3>
           <p class="text-gray-500 dark:text-gray-400">Registra tu vehículo y tus datos personales de forma rápida y segura.</p>
         </div>
         <div>
-          <div class="flex justify-center items-center mb-4 w-10 h-10 rounded-full bg-blue-100 lg:h-12 lg:w-12 dark:bg-blue-900">
-            <svg class="w-5 h-5 text-picoBlue lg:w-6 lg:h-6 dark:text-blue-300" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg>
+          <div class="flex justify-center items-center mb-4 w-10 h-10 rounded-full bg-primary-100 lg:h-12 lg:w-12 dark:bg-primary-900">
+            <svg class="w-5 h-5 text-primary-600 lg:w-6 lg:h-6 dark:text-primary-300" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path></svg>
           </div>
           <h3 class="mb-2 text-xl font-bold dark:text-white">Calendario Interactivo</h3>
           <p class="text-gray-500 dark:text-gray-400">Consulta el Pico y Placa para cualquier día y planifica tus viajes.</p>
@@ -93,7 +93,7 @@ import Layout from "../layout/layout.astro";
     <div class="py-8 px-4 mx-auto max-w-screen-xl text-center lg:py-16">
       <h2 class="mb-4 text-4xl font-extrabold text-gray-900 dark:text-white">No más multas por Pico y Placa</h2>
       <p class="mb-8 text-lg font-normal text-gray-500 lg:text-xl sm:px-16 lg:px-48 dark:text-gray-400">Únete a PicoAlert+ hoy mismo y conduce con tranquilidad.</p>
-      <a href="/register-user" class="inline-flex justify-center items-center py-3 px-5 text-base font-medium text-center text-white rounded-lg bg-picoBlue hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-900">
+      <a href="/register-user" class="inline-flex justify-center items-center py-3 px-5 text-base font-medium text-center text-white rounded-lg bg-primary-900 hover:bg-primary-950 focus:ring-4 focus:ring-primary-700 dark:focus:ring-primary-800 shadow-md cursor-pointer hover:animate-bounce transition-all duration-300">
         Regístrate Ahora
         <svg class="w-3.5 h-3.5 ms-2 rtl:rotate-180" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
           <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
