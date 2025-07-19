@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analizador de Logs de Autenticación - PicoAlert</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+      color: #333;
+    }
+    h1, h2, h3 {
+      color: #333;
+    }
+    h1 {
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 10px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .button-group {
+      margin: 20px 0;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .view-logs-button {
+      background-color: #6c757d;
+    }
+    .view-logs-button:hover {
+      background-color: #5a6268;
+    }
+    .analysis-section {
+      margin-top: 20px;
+    }
+    .issue {
+      background-color: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 0 4px 4px 0;
+    }
+    .issue-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .issue-description {
+      margin-bottom: 10px;
+    }
+    .issue-solution {
+      background-color: #d4edda;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .issue-solution-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .error-issue {
+      background-color: #f8d7da;
+      border-left: 4px solid #dc3545;
+    }
+    .warning-issue {
+      background-color: #fff3cd;
+      border-left: 4px solid #ffc107;
+    }
+    .info-issue {
+      background-color: #d1ecf1;
+      border-left: 4px solid #17a2b8;
+    }
+    .success-issue {
+      background-color: #d4edda;
+      border-left: 4px solid #28a745;
+    }
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      flex: 1;
+      min-width: 200px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 15px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 2em;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+    .stat-label {
+      color: #666;
+      font-size: 0.9em;
+    }
+    .stat-error .stat-value {
+      color: #dc3545;
+    }
+    .stat-warning .stat-value {
+      color: #ffc107;
+    }
+    .stat-info .stat-value {
+      color: #17a2b8;
+    }
+    .stat-success .stat-value {
+      color: #28a745;
+    }
+    .timeline {
+      margin-top: 30px;
+      position: relative;
+      max-height: 400px;
+      overflow-y: auto;
+      padding-right: 15px;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 15px;
+      height: 100%;
+      width: 2px;
+      background-color: #ddd;
+    }
+    .timeline-item {
+      position: relative;
+      margin-bottom: 20px;
+      padding-left: 40px;
+    }
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 0;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background-color: #fff;
+      border: 2px solid #ddd;
+    }
+    .timeline-item-error::before {
+      border-color: #dc3545;
+    }
+    .timeline-item-warning::before {
+      border-color: #ffc107;
+    }
+    .timeline-item-info::before {
+      border-color: #17a2b8;
+    }
+    .timeline-item-success::before {
+      border-color: #28a745;
+    }
+    .timeline-content {
+      background-color: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .timeline-time {
+      font-size: 0.8em;
+      color: #666;
+      margin-bottom: 5px;
+    }
+    .timeline-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .timeline-details {
+      font-size: 0.9em;
+    }
+    .no-issues {
+      padding: 20px;
+      text-align: center;
+      color: #666;
+      font-style: italic;
+    }
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border-left-color: #09f;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Analizador de Logs de Autenticación - PicoAlert</h1>
+    
+    <div class="button-group">
+      <button id="analyze-logs">Analizar Logs de Autenticación</button>
+      <button class="view-logs-button" id="view-logs">Ver Todos los Logs</button>
+      <button id="generate-test-logs">Generar Logs de Prueba</button>
+    </div>
+    
+    <div id="loading" class="loading" style="display: none;">
+      <div class="spinner"></div>
+      <p>Analizando logs...</p>
+    </div>
+    
+    <div id="analysis-results" style="display: none;">
+      <div class="card">
+        <h2>Resumen de Autenticación</h2>
+        
+        <div class="stats">
+          <div class="stat-card stat-info">
+            <div class="stat-value" id="total-auth-logs">0</div>
+            <div class="stat-label">Total de Logs de Autenticación</div>
+          </div>
+          
+          <div class="stat-card stat-success">
+            <div class="stat-value" id="successful-logins">0</div>
+            <div class="stat-label">Inicios de Sesión Exitosos</div>
+          </div>
+          
+          <div class="stat-card stat-error">
+            <div class="stat-value" id="failed-logins">0</div>
+            <div class="stat-label">Inicios de Sesión Fallidos</div>
+          </div>
+          
+          <div class="stat-card stat-warning">
+            <div class="stat-value" id="session-issues">0</div>
+            <div class="stat-label">Problemas de Sesión</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <h2>Problemas Detectados</h2>
+        <div id="issues-container">
+          <!-- Los problemas se cargarán dinámicamente -->
+          <div class="no-issues">No se han detectado problemas.</div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <h2>Línea de Tiempo de Autenticación</h2>
+        <div id="timeline" class="timeline">
+          <!-- La línea de tiempo se cargará dinámicamente -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Elementos del DOM
+    const analyzeLogsButton = document.getElementById('analyze-logs');
+    const viewLogsButton = document.getElementById('view-logs');
+    const generateTestLogsButton = document.getElementById('generate-test-logs');
+    const loadingElement = document.getElementById('loading');
+    const analysisResults = document.getElementById('analysis-results');
+    const totalAuthLogsElement = document.getElementById('total-auth-logs');
+    const successfulLoginsElement = document.getElementById('successful-logins');
+    const failedLoginsElement = document.getElementById('failed-logins');
+    const sessionIssuesElement = document.getElementById('session-issues');
+    const issuesContainer = document.getElementById('issues-container');
+    const timelineContainer = document.getElementById('timeline');
+    
+    // Función para obtener los logs de localStorage
+    function getLogs() {
+      try {
+        const logsData = localStorage.getItem('picoalert-logs');
+        return logsData ? JSON.parse(logsData) : [];
+      } catch (error) {
+        console.error('Error al recuperar logs:', error);
+        return [];
+      }
+    }
+    
+    // Función para formatear fecha
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleString();
+    }
+    
+    // Función para analizar los logs
+    function analyzeLogs() {
+      // Mostrar cargando
+      loadingElement.style.display = 'block';
+      analysisResults.style.display = 'none';
+      
+      // Simular tiempo de procesamiento
+      setTimeout(() => {
+        // Obtener logs
+        const allLogs = getLogs();
+        
+        // Filtrar logs de autenticación
+        const authLogs = allLogs.filter(log => 
+          log.category === 'auth' || 
+          (log.category === 'api' && log.message.toLowerCase().includes('auth')) ||
+          (log.category === 'session' && log.message.toLowerCase().includes('sesión'))
+        );
+        
+        // Contar tipos de logs
+        let successfulLogins = 0;
+        let failedLogins = 0;
+        let sessionIssues = 0;
+        
+        authLogs.forEach(log => {
+          if (log.level === 'ERROR' && log.message.toLowerCase().includes('error de autenticación')) {
+            failedLogins++;
+          } else if (log.level === 'INFO' && log.message.toLowerCase().includes('inicio de sesión exitoso')) {
+            successfulLogins++;
+          } else if (
+            (log.level === 'WARN' && log.message.toLowerCase().includes('sesión')) ||
+            (log.message.toLowerCase().includes('expirada'))
+          ) {
+            sessionIssues++;
+          }
+        });
+        
+        // Actualizar estadísticas
+        totalAuthLogsElement.textContent = authLogs.length;
+        successfulLoginsElement.textContent = successfulLogins;
+        failedLoginsElement.textContent = failedLogins;
+        sessionIssuesElement.textContent = sessionIssues;
+        
+        // Detectar problemas
+        const issues = detectIssues(authLogs, allLogs);
+        
+        // Mostrar problemas
+        displayIssues(issues);
+        
+        // Crear línea de tiempo
+        createTimeline(authLogs);
+        
+        // Ocultar cargando y mostrar resultados
+        loadingElement.style.display = 'none';
+        analysisResults.style.display = 'block';
+      }, 1000);
+    }
+    
+    // Función para detectar problemas
+    function detectIssues(authLogs, allLogs) {
+      const issues = [];
+      
+      // Verificar si hay errores de autenticación
+      const authErrors = authLogs.filter(log => 
+        log.level === 'ERROR' && 
+        log.message.toLowerCase().includes('error de autenticación')
+      );
+      
+      if (authErrors.length > 0) {
+        issues.push({
+          type: 'error',
+          title: 'Errores de autenticación detectados',
+          description: `Se encontraron ${authErrors.length} errores de autenticación. Esto puede indicar problemas con las credenciales de los usuarios o con el servicio de autenticación.`,
+          solution: 'Verifica que las credenciales sean correctas. Si el problema persiste, revisa la conexión con el servicio de autenticación y asegúrate de que esté funcionando correctamente.'
+        });
+      }
+      
+      // Verificar múltiples intentos fallidos
+      const multipleFailures = authLogs.filter(log => 
+        log.message.toLowerCase().includes('múltiples intentos fallidos')
+      );
+      
+      if (multipleFailures.length > 0) {
+        issues.push({
+          type: 'warning',
+          title: 'Múltiples intentos fallidos de inicio de sesión',
+          description: 'Se detectaron múltiples intentos fallidos de inicio de sesión. Esto podría indicar un ataque de fuerza bruta o un usuario que olvidó su contraseña.',
+          solution: 'Considera implementar un sistema de bloqueo temporal de cuentas después de varios intentos fallidos y un sistema de recuperación de contraseña.'
+        });
+      }
+      
+      // Verificar problemas de sesión
+      const sessionExpiredLogs = authLogs.filter(log => 
+        log.message.toLowerCase().includes('sesión expirada') ||
+        log.message.toLowerCase().includes('sesión inválida')
+      );
+      
+      if (sessionExpiredLogs.length > 0) {
+        issues.push({
+          type: 'warning',
+          title: 'Sesiones expiradas o inválidas',
+          description: 'Se detectaron sesiones expiradas o inválidas. Esto puede causar que los usuarios tengan que iniciar sesión con más frecuencia de lo esperado.',
+          solution: 'Verifica la configuración del tiempo de expiración de las sesiones. Considera implementar un sistema de renovación automática de sesiones para mejorar la experiencia del usuario.'
+        });
+      }
+      
+      // Verificar problemas de almacenamiento
+      const storageErrors = allLogs.filter(log => 
+        log.category === 'storage' && 
+        log.level === 'ERROR'
+      );
+      
+      if (storageErrors.length > 0) {
+        issues.push({
+          type: 'error',
+          title: 'Problemas con el almacenamiento de sesión',
+          description: 'Se detectaron errores relacionados con el almacenamiento de sesión. Esto puede afectar la persistencia de la autenticación.',
+          solution: 'Verifica que el navegador tenga suficiente espacio de almacenamiento y que no esté bloqueando el acceso a localStorage o sessionStorage. Considera implementar un mecanismo de respaldo para el almacenamiento de sesión.'
+        });
+      }
+      
+      // Verificar patrones de uso
+      const successfulLogins = authLogs.filter(log => 
+        log.level === 'INFO' && 
+        log.message.toLowerCase().includes('inicio de sesión exitoso')
+      );
+      
+      const logouts = authLogs.filter(log => 
+        log.message.toLowerCase().includes('cierre de sesión')
+      );
+      
+      if (successfulLogins.length > 0 && logouts.length === 0) {
+        issues.push({
+          type: 'info',
+          title: 'Posible falta de cierre de sesión',
+          description: 'Se detectaron inicios de sesión exitosos pero no se encontraron registros de cierre de sesión. Esto podría indicar que los usuarios no están cerrando sesión correctamente.',
+          solution: 'Asegúrate de que el botón de cierre de sesión sea visible y fácil de usar. Considera implementar un cierre de sesión automático después de un período de inactividad.'
+        });
+      }
+      
+      return issues;
+    }
+    
+    // Función para mostrar problemas
+    function displayIssues(issues) {
+      if (issues.length === 0) {
+        issuesContainer.innerHTML = '<div class="no-issues">No se han detectado problemas.</div>';
+        return;
+      }
+      
+      issuesContainer.innerHTML = '';
+      
+      issues.forEach(issue => {
+        const issueElement = document.createElement('div');
+        issueElement.className = `issue ${issue.type}-issue`;
+        
+        issueElement.innerHTML = `
+          <div class="issue-title">${issue.title}</div>
+          <div class="issue-description">${issue.description}</div>
+          <div class="issue-solution">
+            <div class="issue-solution-title">Solución recomendada:</div>
+            <div>${issue.solution}</div>
+          </div>
+        `;
+        
+        issuesContainer.appendChild(issueElement);
+      });
+    }
+    
+    // Función para crear línea de tiempo
+    function createTimeline(authLogs) {
+      timelineContainer.innerHTML = '';
+      
+      if (authLogs.length === 0) {
+        timelineContainer.innerHTML = '<div class="no-issues">No hay eventos de autenticación para mostrar.</div>';
+        return;
+      }
+      
+      // Ordenar logs por fecha (más recientes primero)
+      const sortedLogs = [...authLogs].sort((a, b) => 
+        new Date(b.timestamp) - new Date(a.timestamp)
+      );
+      
+      // Mostrar solo los últimos 20 eventos
+      const recentLogs = sortedLogs.slice(0, 20);
+      
+      recentLogs.forEach(log => {
+        const timelineItem = document.createElement('div');
+        
+        // Determinar clase según nivel
+        let itemClass = 'timeline-item';
+        switch (log.level) {
+          case 'ERROR':
+            itemClass += ' timeline-item-error';
+            break;
+          case 'WARN':
+            itemClass += ' timeline-item-warning';
+            break;
+          case 'INFO':
+            itemClass += ' timeline-item-info';
+            break;
+          case 'DEBUG':
+            itemClass += ' timeline-item-success';
+            break;
+        }
+        
+        timelineItem.className = itemClass;
+        
+        // Formatear datos adicionales
+        let dataContent = '';
+        if (log.data) {
+          try {
+            const dataStr = typeof log.data === 'string' 
+              ? log.data 
+              : JSON.stringify(log.data, null, 2);
+            dataContent = `<pre>${dataStr}</pre>`;
+          } catch (e) {
+            dataContent = `<div>Error al formatear datos: ${e.message}</div>`;
+          }
+        }
+        
+        timelineItem.innerHTML = `
+          <div class="timeline-content">
+            <div class="timeline-time">${formatDate(log.timestamp)}</div>
+            <div class="timeline-title">[${log.level}] ${log.category}: ${log.message}</div>
+            <div class="timeline-details">${dataContent}</div>
+          </div>
+        `;
+        
+        timelineContainer.appendChild(timelineItem);
+      });
+    }
+    
+    // Eventos
+    analyzeLogsButton.addEventListener('click', analyzeLogs);
+    
+    viewLogsButton.addEventListener('click', function() {
+      window.open('log-viewer.html', '_blank');
+    });
+    
+    generateTestLogsButton.addEventListener('click', function() {
+      window.open('test-auth-logs.html', '_blank');
+    });
+    
+    // Analizar logs automáticamente al cargar
+    document.addEventListener('DOMContentLoaded', analyzeLogs);
+    
+    // Analizar logs inmediatamente si el DOM ya está listo
+    if (document.readyState === 'interactive' || document.readyState === 'complete') {
+      analyzeLogs();
+    }
+  </script>
+</body>
+</html>

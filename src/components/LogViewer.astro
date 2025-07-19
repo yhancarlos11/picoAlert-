@@ -1,0 +1,287 @@
+---
+/**
+ * Componente para visualizar los logs almacenados
+ * Este componente permite ver, filtrar y exportar los logs generados por el sistema
+ */
+
+// Props que pueden ser pasadas al componente
+interface Props {
+  title?: string;
+  showExport?: boolean;
+  showClear?: boolean;
+  maxHeight?: string;
+  defaultCategory?: string;
+  defaultLevel?: string;
+}
+
+const { 
+  title = 'Visor de Logs', 
+  showExport = true, 
+  showClear = true,
+  maxHeight = '500px',
+  defaultCategory = '',
+  defaultLevel = ''
+} = Astro.props;
+---
+
+<div class="log-viewer bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 w-full">
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-xl font-semibold text-gray-800 dark:text-white">{title}</h2>
+    <div class="flex space-x-2">
+      {showExport && (
+        <button id="export-logs" class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm">
+          Exportar
+        </button>
+      )}
+      {showClear && (
+        <button id="clear-logs" class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm">
+          Limpiar
+        </button>
+      )}
+      <button id="refresh-logs" class="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm">
+        Actualizar
+      </button>
+    </div>
+  </div>
+  
+  <div class="filters grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    <div>
+      <label for="level-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nivel</label>
+      <select id="level-filter" class="w-full p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+        <option value="">Todos</option>
+        <option value="DEBUG">DEBUG</option>
+        <option value="INFO">INFO</option>
+        <option value="WARN">WARN</option>
+        <option value="ERROR">ERROR</option>
+      </select>
+    </div>
+    <div>
+      <label for="category-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categoría</label>
+      <select id="category-filter" class="w-full p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+        <option value="">Todas</option>
+        <!-- Las categorías se cargarán dinámicamente -->
+      </select>
+    </div>
+    <div>
+      <label for="search-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Buscar</label>
+      <input type="text" id="search-filter" placeholder="Buscar en mensajes..." class="w-full p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+    </div>
+  </div>
+  
+  <div id="logs-container" class="overflow-auto border border-gray-200 dark:border-gray-700 rounded-md" style={`max-height: ${maxHeight}`}>
+    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+      <thead class="bg-gray-50 dark:bg-gray-800 sticky top-0">
+        <tr>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Fecha/Hora</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Nivel</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Categoría</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Mensaje</th>
+          <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Detalles</th>
+        </tr>
+      </thead>
+      <tbody id="logs-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+        <!-- Los logs se cargarán dinámicamente -->
+        <tr>
+          <td colspan="5" class="px-4 py-4 text-center text-gray-500 dark:text-gray-400">Cargando logs...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <div id="no-logs-message" class="hidden mt-4 text-center text-gray-500 dark:text-gray-400">
+    No hay logs disponibles.
+  </div>
+</div>
+
+<script>
+  import { logger } from '../lib/logger.js';
+  
+  document.addEventListener('DOMContentLoaded', () => {
+    // Elementos del DOM
+    const logsBody = document.getElementById('logs-body');
+    const noLogsMessage = document.getElementById('no-logs-message');
+    const levelFilter = document.getElementById('level-filter');
+    const categoryFilter = document.getElementById('category-filter');
+    const searchFilter = document.getElementById('search-filter');
+    const exportButton = document.getElementById('export-logs');
+    const clearButton = document.getElementById('clear-logs');
+    const refreshButton = document.getElementById('refresh-logs');
+    
+    // Establecer filtros por defecto si se proporcionaron
+    if (levelFilter && '{{ defaultLevel }}') {
+      levelFilter.value = '{{ defaultLevel }}';
+    }
+    
+    // Función para cargar y mostrar los logs
+    function loadLogs() {
+      const logs = logger.getLogs();
+      
+      // Mostrar mensaje si no hay logs
+      if (!logs || logs.length === 0) {
+        if (logsBody) logsBody.innerHTML = '';
+        if (noLogsMessage) noLogsMessage.classList.remove('hidden');
+        return;
+      }
+      
+      if (noLogsMessage) noLogsMessage.classList.add('hidden');
+      
+      // Obtener valores de filtros
+      const levelValue = levelFilter ? levelFilter.value : '';
+      const categoryValue = categoryFilter ? categoryFilter.value : '';
+      const searchValue = searchFilter ? searchFilter.value.toLowerCase() : '';
+      
+      // Filtrar logs
+      const filteredLogs = logs.filter(log => {
+        const levelMatch = !levelValue || log.level === levelValue;
+        const categoryMatch = !categoryValue || log.category === categoryValue;
+        const searchMatch = !searchValue || 
+          log.message.toLowerCase().includes(searchValue) || 
+          (log.data && JSON.stringify(log.data).toLowerCase().includes(searchValue));
+        
+        return levelMatch && categoryMatch && searchMatch;
+      });
+      
+      // Actualizar tabla de logs
+      if (logsBody) {
+        logsBody.innerHTML = '';
+        
+        if (filteredLogs.length === 0) {
+          const row = document.createElement('tr');
+          row.innerHTML = `<td colspan="5" class="px-4 py-4 text-center text-gray-500 dark:text-gray-400">No hay logs que coincidan con los filtros.</td>`;
+          logsBody.appendChild(row);
+        } else {
+          filteredLogs.forEach(log => {
+            const row = document.createElement('tr');
+            
+            // Formatear fecha
+            const date = new Date(log.timestamp);
+            const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+            
+            // Determinar clase de nivel para el color
+            let levelClass = '';
+            switch (log.level) {
+              case 'ERROR':
+                levelClass = 'text-red-600 dark:text-red-400 font-semibold';
+                break;
+              case 'WARN':
+                levelClass = 'text-yellow-600 dark:text-yellow-400 font-semibold';
+                break;
+              case 'INFO':
+                levelClass = 'text-blue-600 dark:text-blue-400';
+                break;
+              case 'DEBUG':
+                levelClass = 'text-gray-600 dark:text-gray-400';
+                break;
+            }
+            
+            // Formatear datos adicionales
+            let dataContent = '';
+            if (log.data) {
+              try {
+                const dataStr = typeof log.data === 'string' 
+                  ? log.data 
+                  : JSON.stringify(log.data, null, 2);
+                
+                dataContent = `<pre class="text-xs overflow-auto max-h-32">${dataStr}</pre>`;
+              } catch (e) {
+                dataContent = `<span class="text-red-500">${e.message}</span>`;
+              }
+            }
+            
+            row.innerHTML = `
+              <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">${formattedDate}</td>
+              <td class="px-4 py-2 text-sm ${levelClass} whitespace-nowrap">${log.level}</td>
+              <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">${log.category}</td>
+              <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">${log.message}</td>
+              <td class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">${dataContent}</td>
+            `;
+            
+            logsBody.appendChild(row);
+          });
+        }
+      }
+      
+      // Actualizar opciones de categoría
+      if (categoryFilter) {
+        // Guardar selección actual
+        const currentSelection = categoryFilter.value;
+        
+        // Obtener categorías únicas
+        const categories = [...new Set(logs.map(log => log.category))].sort();
+        
+        // Limpiar opciones actuales excepto la primera (Todas)
+        while (categoryFilter.options.length > 1) {
+          categoryFilter.remove(1);
+        }
+        
+        // Añadir nuevas opciones
+        categories.forEach(category => {
+          const option = document.createElement('option');
+          option.value = category;
+          option.textContent = category;
+          categoryFilter.appendChild(option);
+        });
+        
+        // Restaurar selección si existe
+        if (currentSelection && categories.includes(currentSelection)) {
+          categoryFilter.value = currentSelection;
+        } else if ('{{ defaultCategory }}') {
+          categoryFilter.value = '{{ defaultCategory }}';
+        }
+      }
+    }
+    
+    // Cargar logs inicialmente
+    loadLogs();
+    
+    // Configurar event listeners para filtros
+    if (levelFilter) levelFilter.addEventListener('change', loadLogs);
+    if (categoryFilter) categoryFilter.addEventListener('change', loadLogs);
+    if (searchFilter) searchFilter.addEventListener('input', loadLogs);
+    
+    // Configurar botón de exportar
+    if (exportButton) {
+      exportButton.addEventListener('click', () => {
+        const logs = logger.exportLogs();
+        const blob = new Blob([logs], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `picoalert-logs-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+    }
+    
+    // Configurar botón de limpiar
+    if (clearButton) {
+      clearButton.addEventListener('click', () => {
+        if (confirm('¿Estás seguro de que deseas eliminar todos los logs? Esta acción no se puede deshacer.')) {
+          logger.clearLogs();
+          loadLogs();
+        }
+      });
+    }
+    
+    // Configurar botón de actualizar
+    if (refreshButton) {
+      refreshButton.addEventListener('click', loadLogs);
+    }
+  });
+</script>
+
+<style>
+  /* Estilos adicionales para el visor de logs */
+  .log-viewer pre {
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+    padding: 8px;
+  }
+  
+  .dark .log-viewer pre {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+</style>

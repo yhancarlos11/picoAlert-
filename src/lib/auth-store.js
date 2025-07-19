@@ -2,8 +2,10 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { login, logout, getCurrentUser, isAuthenticated } from './api.js';
 import { setAuthSession, getAuthSession, clearAuthSession, hasAuthSession } from './storage.js';
+import logger from './logger.js';
 
 // Store de autenticación con persistencia
+logger.info('auth-store', 'Inicializando store de autenticación');
 export const useAuthStore = create(
     persist(
         (set, get) => ({
@@ -15,17 +17,20 @@ export const useAuthStore = create(
 
             // Acciones
             login: async (email, password) => {
-                console.log('Iniciando proceso de login en auth-store con email:', email);
+                logger.info('auth-store', 'Iniciando proceso de login', { email });
                 set({ isLoading: true, error: null });
                 try {
-                    console.log('Llamando a función login de api.js');
+                    logger.debug('auth-store', 'Llamando a función login de api.js');
                     const result = await login(email, password);
-                    console.log('Resultado de login:', result);
+                    logger.debug('auth-store', 'Resultado de login', { success: result.success });
                     if (result.success) {
-                        console.log('Login exitoso, obteniendo información del usuario');
+                        logger.info('auth-store', 'Login exitoso, obteniendo información del usuario');
                         // Obtener el usuario actual después de iniciar sesión
                         const userInfo = await getCurrentUser();
-                        console.log('Información del usuario obtenida:', userInfo);
+                        logger.debug('auth-store', 'Información del usuario obtenida', { 
+                            userId: userInfo?.id,
+                            email: userInfo?.email
+                        });
                         
                         // Guardar en el store y en sessionStorage
                         const authData = { 
@@ -42,11 +47,12 @@ export const useAuthStore = create(
                         // Guardar en sessionStorage para persistencia entre páginas
                         setAuthSession(authData);
                         
-                        console.log('Estado de autenticación actualizado en store y sessionStorage');
+                        logger.info('auth-store', 'Estado de autenticación actualizado en store y sessionStorage');
                         return { success: true };
                     } else {
                         // Limpiar datos de autenticación
                         clearAuthSession();
+                        logger.warn('auth-store', 'Login fallido', { error: result.error });
                         
                         set({ 
                             error: result.error, 
@@ -57,6 +63,11 @@ export const useAuthStore = create(
                         return { success: false, error: result.error };
                     }
                 } catch (error) {
+                    logger.error('auth-store', 'Error en proceso de login', { 
+                        message: error.message,
+                        name: error.name,
+                        stack: error.stack
+                    });
                     set({ 
                         error: error.message, 
                         isLoading: false,
@@ -68,12 +79,12 @@ export const useAuthStore = create(
             },
 
             logout: async () => {
-                console.log('Iniciando proceso de logout en auth-store');
+                logger.info('auth-store', 'Iniciando proceso de logout');
                 set({ isLoading: true });
                 try {
-                    console.log('Llamando a función logout de api.js');
+                    logger.debug('auth-store', 'Llamando a función logout de api.js');
                     await logout();
-                    console.log('Logout exitoso, limpiando estado de usuario');
+                    logger.info('auth-store', 'Logout exitoso, limpiando estado de usuario');
                     
                     // Limpiar sessionStorage
                     clearAuthSession();
@@ -84,11 +95,15 @@ export const useAuthStore = create(
                         isLoading: false,
                         error: null 
                     });
-                    console.log('Estado de autenticación actualizado en store y sessionStorage (sesión cerrada)');
+                    logger.info('auth-store', 'Estado de autenticación actualizado en store y sessionStorage (sesión cerrada)');
                 } catch (error) {
-                    console.error('Error durante logout:', error);
+                    logger.error('auth-store', 'Error durante logout', { 
+                        message: error.message,
+                        name: error.name,
+                        stack: error.stack
+                    });
                     // Limpiar el estado local incluso si hay error en el servidor
-                    console.log('Limpiando estado local a pesar del error');
+                    logger.info('auth-store', 'Limpiando estado local a pesar del error');
                     
                     // Limpiar sessionStorage incluso si hay error
                     clearAuthSession();
@@ -99,37 +114,42 @@ export const useAuthStore = create(
                         isLoading: false,
                         error: null 
                     });
-                    console.log('Estado de autenticación actualizado en store y sessionStorage (sesión cerrada a pesar del error)');
+                    logger.info('auth-store', 'Estado de autenticación actualizado en store y sessionStorage (sesión cerrada a pesar del error)');
                 }
             },
 
             checkAuth: async () => {
-                console.log('Verificando estado de autenticación en auth-store');
+                logger.info('auth-store', 'Verificando estado de autenticación');
                 set({ isLoading: true });
                 
                 // Primero verificar si hay sesión en sessionStorage
                 const sessionData = getAuthSession();
                 if (sessionData && sessionData.isAuthenticated && sessionData.user) {
-                    console.log('Sesión encontrada en sessionStorage, restaurando estado');
+                    logger.info('auth-store', 'Sesión encontrada en sessionStorage, restaurando estado', {
+                        userId: sessionData.user?.id
+                    });
                     set({
                         user: sessionData.user,
                         isAuthenticated: true,
                         isLoading: false,
                         error: null
                     });
-                    console.log('Estado de autenticación restaurado desde sessionStorage');
+                    logger.info('auth-store', 'Estado de autenticación restaurado desde sessionStorage');
                     return;
                 }
                 
                 // Si no hay sesión en sessionStorage, verificar con el servidor
                 try {
-                    console.log('Llamando a función isAuthenticated de api.js');
+                    logger.debug('auth-store', 'Llamando a función isAuthenticated de api.js');
                     const authenticated = await isAuthenticated();
-                    console.log('Resultado de verificación de autenticación:', authenticated);
+                    logger.debug('auth-store', 'Resultado de verificación de autenticación', { authenticated });
                     if (authenticated) {
-                        console.log('Usuario autenticado, obteniendo información del usuario');
+                        logger.info('auth-store', 'Usuario autenticado, obteniendo información del usuario');
                         const userInfo = await getCurrentUser();
-                        console.log('Información del usuario obtenida:', userInfo);
+                        logger.debug('auth-store', 'Información del usuario obtenida', { 
+                            userId: userInfo?.id,
+                            email: userInfo?.email
+                        });
                         
                         // Guardar en el store y en sessionStorage
                         const authData = {
@@ -146,9 +166,9 @@ export const useAuthStore = create(
                         // Guardar en sessionStorage
                         setAuthSession(authData);
                         
-                        console.log('Estado de autenticación actualizado en store y sessionStorage (autenticado)');
+                        logger.info('auth-store', 'Estado de autenticación actualizado en store y sessionStorage (autenticado)');
                     } else {
-                        console.log('Usuario no autenticado, limpiando estado');
+                        logger.info('auth-store', 'Usuario no autenticado, limpiando estado');
                         
                         // Limpiar sessionStorage
                         clearAuthSession();
@@ -159,10 +179,14 @@ export const useAuthStore = create(
                             isLoading: false,
                             error: null
                         });
-                        console.log('Estado de autenticación actualizado en store y sessionStorage (no autenticado)');
+                        logger.info('auth-store', 'Estado de autenticación actualizado en store y sessionStorage (no autenticado)');
                     }
                 } catch (error) {
-                    console.error('Error checking auth:', error);
+                    logger.error('auth-store', 'Error checking auth', { 
+                        message: error.message,
+                        name: error.name,
+                        stack: error.stack
+                    });
                     
                     // Limpiar sessionStorage en caso de error
                     clearAuthSession();
@@ -174,7 +198,7 @@ export const useAuthStore = create(
                         error: error.message 
                     });
                     
-                    console.log('Error en verificación de autenticación, sesión limpiada');
+                    logger.warn('auth-store', 'Error en verificación de autenticación, sesión limpiada');
                 }
             },
 

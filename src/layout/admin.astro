@@ -1,11 +1,13 @@
 ---
 import BaseLayout from './base.astro';
 import Sidebar from '../components/Sidebar.astro';
+import Footer from '../components/Footer.astro';
 
 // Enlaces para el panel de administrador
 const adminLinks = [
   { href: '/admin/users', text: 'Lista de Usuarios', icon: 'Users' },
   { href: '/admin/pico-y-placa-rules', text: 'Gestión de Pico y Placa', icon: 'Settings' },
+  { href: '/admin/logs', text: 'Logs del Sistema', icon: 'Document' },
 ];
 
 // Recibir props y pasarlas al layout base
@@ -23,10 +25,15 @@ const {
   keywords={keywords}
   {...restProps}
 >
-  <div class="flex h-screen bg-white dark:bg-gray-900">
-    <Sidebar title="Panel de Administrador" links={adminLinks} />
-    <main class="flex-1 p-6 overflow-y-auto md:ml-64">
-      <slot />
-    </main>
+  <div class="flex flex-col min-h-screen bg-white dark:bg-gray-900">
+    <div class="flex flex-1">
+      <Sidebar title="Panel de Administrador" links={adminLinks} />
+      <main class="flex-1 p-6 overflow-y-auto md:ml-64">
+        <slot />
+      </main>
+    </div>
+    <div class="md:ml-64">
+      <Footer />
+    </div>
   </div>
 </BaseLayout>

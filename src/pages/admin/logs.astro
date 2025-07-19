@@ -1,0 +1,126 @@
+---
+/**
+ * Página de administración de logs del sistema
+ * Esta página permite visualizar, filtrar y exportar los logs generados por el sistema
+ * Solo accesible para administradores
+ */
+import Layout from '../../layout/layout.astro';
+import LogViewer from '../../components/LogViewer.astro';
+import { isAuthenticated } from '../../lib/api';
+
+// Verificar autenticación
+const authenticated = await isAuthenticated();
+if (!authenticated) {
+  return Astro.redirect('/login?redirect=/admin/logs');
+}
+
+// Título de la página
+const title = 'Administración de Logs';
+---
+
+<Layout title={title}>
+  <div class="container mx-auto px-4 py-8">
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">{title}</h1>
+      <p class="text-gray-600 dark:text-gray-300">
+        Visualiza y analiza los logs del sistema para identificar problemas y comportamientos inesperados.
+      </p>
+    </div>
+    
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
+      <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4">Información General</h2>
+      <p class="text-gray-600 dark:text-gray-300 mb-4">
+        Los logs del sistema registran eventos importantes como inicios de sesión, errores de autenticación, 
+        operaciones críticas y problemas de conexión. Utiliza los filtros para encontrar información específica.
+      </p>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <div class="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg">
+          <h3 class="font-medium text-blue-700 dark:text-blue-300 mb-1">Autenticación</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            Logs relacionados con inicios de sesión, cierres de sesión y verificación de autenticación.
+          </p>
+        </div>
+        
+        <div class="bg-red-50 dark:bg-red-900/30 p-4 rounded-lg">
+          <h3 class="font-medium text-red-700 dark:text-red-300 mb-1">Errores</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            Errores del sistema, incluyendo problemas de conexión, errores de API y excepciones.
+          </p>
+        </div>
+        
+        <div class="bg-yellow-50 dark:bg-yellow-900/30 p-4 rounded-lg">
+          <h3 class="font-medium text-yellow-700 dark:text-yellow-300 mb-1">Advertencias</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            Situaciones que requieren atención pero no son errores críticos.
+          </p>
+        </div>
+        
+        <div class="bg-green-50 dark:bg-green-900/30 p-4 rounded-lg">
+          <h3 class="font-medium text-green-700 dark:text-green-300 mb-1">Información</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            Eventos informativos del sistema y operaciones exitosas.
+          </p>
+        </div>
+      </div>
+      
+      <div class="flex flex-wrap gap-2">
+        <a href="/admin/logs?filter=auth" class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full text-sm hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors">
+          <span class="mr-1">🔐</span> Filtrar por Autenticación
+        </a>
+        <a href="/admin/logs?level=ERROR" class="inline-flex items-center px-3 py-1 bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 rounded-full text-sm hover:bg-red-200 dark:hover:bg-red-800 transition-colors">
+          <span class="mr-1">⚠️</span> Ver solo Errores
+        </a>
+        <a href="/admin/logs?level=WARN" class="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 rounded-full text-sm hover:bg-yellow-200 dark:hover:bg-yellow-800 transition-colors">
+          <span class="mr-1">⚡</span> Ver Advertencias
+        </a>
+        <a href="/" class="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+          <span class="mr-1">🏠</span> Volver al Inicio
+        </a>
+      </div>
+    </div>
+    
+    <LogViewer 
+      title="Logs del Sistema" 
+      maxHeight="600px" 
+      showExport={true} 
+      showClear={true} 
+    />
+  </div>
+  
+  <script>
+    // Procesar parámetros de URL para establecer filtros iniciales
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const levelParam = urlParams.get('level');
+      const filterParam = urlParams.get('filter');
+      
+      // Aplicar filtro de nivel si existe
+      if (levelParam) {
+        const levelFilter = document.getElementById('level-filter');
+        if (levelFilter) levelFilter.value = levelParam;
+        
+        // Disparar evento de cambio para aplicar el filtro
+        levelFilter.dispatchEvent(new Event('change'));
+      }
+      
+      // Aplicar filtro de categoría si existe
+      if (filterParam === 'auth') {
+        // Esperar a que se carguen las categorías
+        setTimeout(() => {
+          const categoryFilter = document.getElementById('category-filter');
+          if (categoryFilter) {
+            // Buscar opción que contenga 'auth' en su texto
+            for (let i = 0; i < categoryFilter.options.length; i++) {
+              if (categoryFilter.options[i].text.toLowerCase().includes('auth')) {
+                categoryFilter.selectedIndex = i;
+                categoryFilter.dispatchEvent(new Event('change'));
+                break;
+              }
+            }
+          }
+        }, 500);
+      }
+    });
+  </script>
+</Layout>

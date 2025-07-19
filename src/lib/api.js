@@ -1,28 +1,37 @@
 import { createDirectus, rest, authentication, readItems, createItem, readItem, registerUser, createUser } from '@directus/sdk';
+import logger from './logger.js';
 
 // Configuración del cliente Directus
 const directus = createDirectus('https://directus.bryanmedin4.com')
     .with(rest())
     .with(authentication('cookie'));
 
+logger.info('api', 'Cliente Directus inicializado');
+
 // Funciones de autenticación
 export async function login(email, password) {
     try {
-        console.log('Intentando login con:', { email });
+        logger.info('auth', 'Intentando login', { email });
         // Directus espera los campos email y password para la autenticación
         // El SDK de Directus espera 'password', no 'Clave'
         const result = await directus.login({ email, password });
-        console.log('Login exitoso:', result);
+        logger.info('auth', 'Login exitoso', { userId: result?.id });
         
         // Verificar que se haya obtenido un token válido
         const token = await directus.getToken();
         if (!token) {
-            throw new Error('No se pudo obtener un token de autenticación válido');
+            const error = new Error('No se pudo obtener un token de autenticación válido');
+            logger.error('auth', error.message);
+            throw error;
         }
         
         return { success: true, data: result };
     } catch (error) {
-        console.error('Error en login:', error);
+        logger.error('auth', 'Error en login', { 
+            message: error.message,
+            name: error.name,
+            stack: error.stack
+        });
         
         // Proporcionar mensajes de error más descriptivos
         let errorMessage = error.message;
@@ -38,12 +47,16 @@ export async function login(email, password) {
 
 export async function logout() {
     try {
-        console.log('Intentando logout');
+        logger.info('auth', 'Intentando logout');
         await directus.logout();
-        console.log('Logout exitoso');
+        logger.info('auth', 'Logout exitoso');
         return { success: true };
     } catch (error) {
-        console.error('Error en logout:', error);
+        logger.error('auth', 'Error en logout', { 
+            message: error.message,
+            name: error.name,
+            stack: error.stack
+        });
         // A pesar del error, consideramos el logout como exitoso desde el punto de vista del cliente
         // ya que queremos limpiar el estado local de autenticación
         return { success: true, warning: error.message };
@@ -52,19 +65,26 @@ export async function logout() {
 
 export async function getCurrentUser() {
     try {
-        console.log('Verificando usuario actual');
+        logger.info('auth', 'Verificando usuario actual');
         const token = await directus.getToken();
-        console.log('Token encontrado:', !!token);
+        logger.debug('auth', 'Token en getCurrentUser', { 
+            hasToken: !!token, 
+            tokenPreview: token ? token.substring(0, 10) + '...' : 'null' 
+        });
         
         if (!token) {
-            console.log('No hay token disponible, usuario no autenticado');
+            logger.info('auth', 'No hay token disponible en getCurrentUser, usuario no autenticado');
             return null;
         }
         
         // Obtener información del usuario actual
         try {
+            logger.debug('auth', 'Intentando obtener datos del usuario actual');
             const currentUser = await directus.users.me.read();
-            console.log('Usuario actual obtenido:', currentUser);
+            logger.info('auth', 'Usuario actual obtenido', { 
+                userId: currentUser.id,
+                email: currentUser.email
+            });
             return {
                 authenticated: true,
                 id: currentUser.id,
@@ -74,15 +94,20 @@ export async function getCurrentUser() {
                 name: currentUser.first_name
             };
         } catch (userError) {
-            console.error('Error al obtener datos del usuario:', userError);
+            logger.error('auth', 'Error al obtener datos del usuario', { 
+                message: userError.message,
+                name: userError.name,
+                stack: userError.stack
+            });
             
             // Verificar si el error es de autenticación (401 o 403)
             if (userError.message && (userError.message.includes('401') || userError.message.includes('403'))) {
-                console.log('Error de autenticación al obtener usuario, token inválido o expirado');
+                logger.warn('auth', 'Error de autenticación al obtener usuario, token inválido o expirado');
                 return null;
             }
             
             // Para otros errores, devolver un objeto con valores predeterminados
+            logger.warn('auth', 'Devolviendo usuario con ID desconocido debido a error no relacionado con autenticación');
             return { 
                 authenticated: true,
                 id: 'unknown',
@@ -93,7 +118,11 @@ export async function getCurrentUser() {
             }; // Al menos sabemos que está autenticado
         }
     } catch (error) {
-        console.error('Error en getCurrentUser:', error);
+        logger.error('auth', 'Error general en getCurrentUser', { 
+            message: error.message,
+            name: error.name,
+            stack: error.stack
+        });
         return null;
     }
 }
@@ -107,7 +136,7 @@ async function makeAuthenticatedRequest(url, options = {}) {
         let token;
         try {
             token = await directus.getToken();
-            console.log('Token disponible:', !!token);
+            console.log('Token disponible:', !!token, token ? token.substring(0, 10) + '...' : 'null');
         } catch (tokenError) {
             console.error('Error al obtener token:', tokenError);
             throw new Error('Error al obtener token de autenticación. Por favor, inicia sesión nuevamente.');
@@ -128,7 +157,7 @@ async function makeAuthenticatedRequest(url, options = {}) {
             }
         }
         
-        console.log('Enviando petición con headers:', headers);
+        console.log('Enviando petición con headers:', JSON.stringify(headers));
         
         // Manejar errores de red
         let response;
@@ -152,6 +181,7 @@ async function makeAuthenticatedRequest(url, options = {}) {
             
             // Manejar errores específicos de autenticación
             if (response.status === 401 || response.status === 403) {
+                console.error('Error de autenticación:', response.status);
                 throw new Error('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
             }
             
@@ -172,7 +202,9 @@ async function makeAuthenticatedRequest(url, options = {}) {
         
         // Parsear la respuesta con manejo de errores
         try {
-            return await response.json();
+            const data = await response.json();
+            console.log('Respuesta parseada correctamente, datos recibidos');
+            return data;
         } catch (parseError) {
             console.error('Error al parsear la respuesta JSON:', parseError);
             throw new Error('Error al procesar la respuesta del servidor.');
@@ -306,74 +338,136 @@ export async function createUsuario(data) {
 
 export async function getVehiculos() {
     try {
+        console.log('Iniciando getVehiculos');
         // Verificar si el usuario está autenticado
-        const isAuth = await isAuthenticated();
+        let isAuth = false;
+        try {
+            isAuth = await isAuthenticated();
+            console.log('Resultado de autenticación en getVehiculos:', isAuth);
+        } catch (authError) {
+            console.error('Error al verificar autenticación para obtener vehículos:', authError);
+            return [];
+        }
+        
         if (!isAuth) {
             console.error('No hay autenticación para obtener vehículos');
             return [];
         }
         
         // Obtener el usuario actual
-        const currentUser = await getCurrentUser();
-        if (!currentUser || !currentUser.id || currentUser.id === 'unknown') {
-            console.error('No se pudo obtener información del usuario actual');
+        let currentUser = null;
+        try {
+            currentUser = await getCurrentUser();
+            console.log('Usuario actual obtenido en getVehiculos:', currentUser);
+        } catch (userError) {
+            console.error('Error al obtener usuario actual para vehículos:', userError);
+            return [];
+        }
+        
+        if (!currentUser) {
+            console.error('No se pudo obtener información del usuario actual (null)');
+            return [];
+        }
+        
+        if (!currentUser.id) {
+            console.error('Usuario actual no tiene ID');
+            return [];
+        }
+        
+        if (currentUser.id === 'unknown') {
+            console.error('ID de usuario es "unknown"');
             return [];
         }
         
         const userId = currentUser.id;
+        console.log('ID de usuario para consulta de vehículos:', userId);
         
         // Obtener solo los vehículos del usuario actual
-        const result = await makeAuthenticatedRequest(`https://directus.bryanmedin4.com/items/Vehiculo?filter[Usuario][_eq]=${userId}`);
-        return result.data;
+        try {
+            const url = `https://directus.bryanmedin4.com/items/Vehiculo?filter[Usuario][_eq]=${userId}`;
+            console.log('URL para obtener vehículos:', url);
+            
+            const result = await makeAuthenticatedRequest(url);
+            console.log('Resultado de obtener vehículos:', result);
+            
+            if (!result) {
+                console.error('Resultado de obtener vehículos es null o undefined');
+                return [];
+            }
+            
+            if (!result.data) {
+                console.error('Resultado no contiene data');
+                return [];
+            }
+            
+            console.log('Vehículos obtenidos:', result.data.length);
+            return result.data || [];
+        } catch (requestError) {
+            console.error('Error en la solicitud al obtener vehículos:', requestError);
+            return [];
+        }
     } catch (error) {
-        console.error('Error fetching vehiculos:', error);
+        console.error('Error general en getVehiculos:', error);
         return [];
     }
 }
 
-export async function createVehiculo(data) {
+export async function createVehiculo(placa, tipo) {
     try {
-        console.log('Iniciando creación de vehículo:', data);
-        
         // Verificar si el usuario está autenticado
-        const isAuth = await isAuthenticated();
-        if (!isAuth) {
-            console.error('Usuario no autenticado al intentar crear vehículo');
-            throw new Error('No hay sesión activa. Por favor, inicia sesión nuevamente.');
+        let isAuth = false;
+        try {
+            isAuth = await isAuthenticated();
+        } catch (authError) {
+            console.error('Error al verificar autenticación para crear vehículo:', authError);
+            throw new Error('Error de autenticación al crear vehículo');
         }
         
-        // Obtener el usuario actual usando la función segura
-        const currentUser = await getCurrentUser();
+        if (!isAuth) {
+            console.error('No hay autenticación para crear vehículo');
+            throw new Error('No hay autenticación para crear vehículo');
+        }
+        
+        // Obtener el usuario actual
+        let currentUser = null;
+        try {
+            currentUser = await getCurrentUser();
+        } catch (userError) {
+            console.error('Error al obtener usuario actual para crear vehículo:', userError);
+            throw new Error('Error al obtener información del usuario');
+        }
+        
         if (!currentUser || !currentUser.id || currentUser.id === 'unknown') {
-            console.error('No se pudo obtener información del usuario al crear vehículo');
-            throw new Error('No se pudo obtener la información del usuario actual.');
+            console.error('No se pudo obtener información del usuario actual');
+            throw new Error('No se pudo obtener información del usuario');
         }
         
         const userId = currentUser.id;
-        console.log('Usuario identificado para crear vehículo:', userId);
         
-        // Asociar el vehículo al usuario actual
-        const vehicleData = {
-            ...data,
-            Usuario: userId // Asociar el vehículo al usuario actual
-        };
-        
+        // Crear el vehículo asociado al usuario actual
         try {
-            console.log('Enviando solicitud para crear vehículo:', vehicleData);
             const result = await makeAuthenticatedRequest('https://directus.bryanmedin4.com/items/Vehiculo', {
                 method: 'POST',
-                body: JSON.stringify(vehicleData)
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    Placa: placa,
+                    Tipo: tipo,
+                    Usuario: userId
+                }),
             });
-            console.log('Vehículo creado exitosamente:', result.data);
+            
             return result.data;
         } catch (requestError) {
-            // Verificar si el error es de autenticación (401 o 403)
-            if (requestError.message && (requestError.message.includes('401') || requestError.message.includes('403'))) {
-                console.error('Error de autenticación al crear vehículo:', requestError);
-                throw new Error('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
-            }
             console.error('Error en la solicitud al crear vehículo:', requestError);
-            throw requestError;
+            
+            // Manejar errores específicos de autenticación
+            if (requestError.status === 401 || requestError.status === 403) {
+                throw new Error('Error de autenticación al crear vehículo');
+            }
+            
+            throw new Error('Error al crear vehículo: ' + (requestError.message || 'Error desconocido'));
         }
     } catch (error) {
         console.error('Error creating vehiculo:', error);
@@ -384,19 +478,40 @@ export async function createVehiculo(data) {
 // Función para verificar si el usuario está autenticado
 export async function isAuthenticated() {
     try {
-        console.log('Verificando autenticación');
-        const token = await directus.getToken();
+        logger.info('auth', 'Verificando autenticación');
+        let token = null;
+        
+        try {
+            token = await directus.getToken();
+            logger.debug('auth', 'Token en isAuthenticated', { 
+                hasToken: !!token, 
+                tokenPreview: token ? token.substring(0, 10) + '...' : 'null' 
+            });
+        } catch (tokenError) {
+            logger.error('auth', 'Error al obtener token en isAuthenticated', { 
+                message: tokenError.message,
+                name: tokenError.name,
+                stack: tokenError.stack
+            });
+            return false;
+        }
+        
         const isAuth = !!token;
-        console.log('¿Usuario autenticado?', isAuth);
+        logger.info('auth', '¿Usuario autenticado? (basado en token)', { isAuthenticated: isAuth });
         
         // Si hay token, verificar que sea válido intentando obtener el usuario actual
         if (isAuth) {
             try {
                 // Intentar obtener información del usuario para validar el token
-                await directus.users.me.read();
+                const user = await directus.users.me.read();
+                logger.info('auth', 'Usuario validado en isAuthenticated', { userId: user ? user.id : 'null' });
                 return true;
             } catch (userError) {
-                console.error('Error al validar token:', userError);
+                logger.error('auth', 'Error al validar token en isAuthenticated', { 
+                    message: userError.message,
+                    name: userError.name,
+                    stack: userError.stack
+                });
                 // Si hay error al obtener el usuario, el token podría ser inválido
                 return false;
             }
@@ -404,7 +519,11 @@ export async function isAuthenticated() {
         
         return isAuth;
     } catch (error) {
-        console.error('Error al verificar autenticación:', error);
+        logger.error('auth', 'Error general en isAuthenticated', { 
+            message: error.message,
+            name: error.name,
+            stack: error.stack
+        });
         return false;
     }
 }

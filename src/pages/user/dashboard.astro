@@ -49,34 +49,20 @@ import StatusMessage from '../../components/StatusMessage.astro';
                     </a>
                 </div>
                 
-                <div id="vehicles-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <!-- Los vehículos se cargarán dinámicamente -->
-                    <div id="loading-vehicles" class="col-span-full text-center py-8">
-                        <div class="inline-flex items-center px-4 py-3 font-semibold leading-6 text-sm rounded-md text-gray-600 bg-white border border-gray-200 shadow-sm dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 transition ease-in-out duration-150">
-                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Cargando vehículos...
-                        </div>
+                <div id="vehicles-container" class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    <div id="loading-vehicles" class="col-span-full flex justify-center items-center py-8">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <span class="ml-2 text-gray-600">Cargando vehículos...</span>
                     </div>
-                    
                     <div id="no-vehicles" class="hidden col-span-full text-center py-8">
-                        <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-8 shadow-sm max-w-md mx-auto">
-                            <svg class="mx-auto h-12 w-12 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                            <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">No tienes vehículos registrados</h3>
-                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Comienza registrando tu primer vehículo.</p>
-                            <div class="mt-6">
-                                <a href="/user/register-vehicle" class="inline-flex items-center px-4 py-2 border border-transparent shadow-md text-sm font-medium rounded-md text-white bg-secondary-500 hover:bg-secondary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary-300 transition-colors duration-200 cursor-pointer">
-                                    <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                    </svg>
-                                    Registrar Vehículo
-                                </a>
-                            </div>
-                        </div>
+                        <p class="text-gray-600">No tienes vehículos registrados.</p>
+                        <a href="/user/register-vehicle" class="inline-block mt-2 text-primary hover:underline">Registrar un vehículo</a>
+                    </div>
+                    <div id="error-loading-vehicles" class="hidden col-span-full text-center py-8">
+                        <p class="text-red-600">Hubo un problema al cargar tus vehículos.</p>
+                        <button id="reload-vehicles" class="mt-2 px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark">
+                            Intentar nuevamente
+                        </button>
                     </div>
                 </div>
             </div>
@@ -139,7 +125,7 @@ import StatusMessage from '../../components/StatusMessage.astro';
 
     <script>
         import { useAuthStore } from '../../lib/auth-store.js';
-        import { getVehiculos, getReglasPicoYPlaca } from '../../lib/api.js';
+        import { getVehiculos, getReglasPicoYPlaca, isAuthenticated } from '../../lib/api.js';
         
         document.addEventListener('DOMContentLoaded', async () => {
             const authStore = useAuthStore.getState();
@@ -167,14 +153,14 @@ import StatusMessage from '../../components/StatusMessage.astro';
                     displayName = currentUser.email;
                 }
                 
-                document.getElementById('welcome-message').textContent = `Bienvenido, ${displayName}`;
+                // Actualizar el título del PageHeader con el nombre del usuario
+                const pageHeaderTitle = document.querySelector('.text-3xl.font-bold.text-gray-900.dark\\:text-white');
+                if (pageHeaderTitle) {
+                    pageHeaderTitle.textContent = `Bienvenido, ${displayName}`;
+                }
             }
             
-            // Configurar logout
-            document.getElementById('logout-btn').addEventListener('click', async () => {
-                await authStore.logout();
-                window.location.href = '/login';
-            });
+            // El logout ya está configurado en el componente LogoutButton
             
             // Cargar vehículos del usuario
             await loadUserVehicles();
@@ -184,27 +170,73 @@ import StatusMessage from '../../components/StatusMessage.astro';
         });
         
         async function loadUserVehicles() {
+            console.log('Iniciando carga de vehículos');
+            const vehiclesContainer = document.getElementById('vehicles-container');
+            const loadingElement = document.getElementById('loading-vehicles');
+            const noVehiclesElement = document.getElementById('no-vehicles');
+            const errorElement = document.getElementById('error-loading-vehicles');
+            const vehicleCountElement = document.getElementById('vehicle-count');
+            
+            // Mostrar indicador de carga y ocultar otros elementos
+            loadingElement.classList.remove('hidden');
+            noVehiclesElement.classList.add('hidden');
+            errorElement.classList.add('hidden');
+            
             try {
-                const vehiclesContainer = document.getElementById('vehicles-container');
-                const loadingElement = document.getElementById('loading-vehicles');
-                const noVehiclesElement = document.getElementById('no-vehicles');
-                const vehicleCountElement = document.getElementById('vehicle-count');
-                
                 // Verificar autenticación antes de intentar cargar vehículos
-                if (!authStore.isAuthenticated) {
-                    console.log('Usuario no autenticado, no se cargarán vehículos');
+                console.log('Verificando autenticación para cargar vehículos');
+                let isAuth = false;
+                try {
+                    // Usar la función isAuthenticated importada de api.js
+                    isAuth = await isAuthenticated();
+                    console.log('Resultado de autenticación:', isAuth);
+                } catch (authError) {
+                    console.error('Error al verificar autenticación para cargar vehículos:', authError);
                     loadingElement.classList.add('hidden');
-                    noVehiclesElement.classList.remove('hidden');
+                    errorElement.classList.remove('hidden');
+                    vehicleCountElement.textContent = '0';
                     return;
                 }
                 
-                const vehicles = await getVehiculos();
+                if (!isAuth) {
+                    console.error('No hay autenticación para cargar vehículos');
+                    loadingElement.classList.add('hidden');
+                    errorElement.classList.remove('hidden');
+                    vehicleCountElement.textContent = '0';
+                    return;
+                }
                 
+                console.log('Obteniendo vehículos del usuario');
+                let vehicles = [];
+                try {
+                    vehicles = await getVehiculos();
+                    console.log('Vehículos obtenidos:', vehicles);
+                } catch (vehicleError) {
+                    console.error('Error al obtener vehículos:', vehicleError);
+                    // Mostrar mensaje de error
+                    loadingElement.classList.add('hidden');
+                    errorElement.classList.remove('hidden');
+                    vehicleCountElement.textContent = '0';
+                    return;
+                }
+                
+                console.log('Ocultando indicador de carga');
                 loadingElement.classList.add('hidden');
                 
+                // Limpiar el contenedor de vehículos antes de agregar nuevos
+                while (vehiclesContainer.firstChild) {
+                    if (vehiclesContainer.firstChild.id !== 'loading-vehicles' && 
+                        vehiclesContainer.firstChild.id !== 'no-vehicles' &&
+                        vehiclesContainer.firstChild.id !== 'error-loading-vehicles') {
+                        vehiclesContainer.removeChild(vehiclesContainer.firstChild);
+                    }
+                }
+                
                 if (vehicles && vehicles.length > 0) {
+                    console.log('Mostrando', vehicles.length, 'vehículos');
                     vehicleCountElement.textContent = vehicles.length;
                     noVehiclesElement.classList.add('hidden');
+                    errorElement.classList.add('hidden');
                     
                     // Mostrar solo los primeros 3 vehículos en el dashboard
                     const displayVehicles = vehicles.slice(0, 3);
@@ -219,19 +251,57 @@ import StatusMessage from '../../components/StatusMessage.astro';
                         vehiclesContainer.appendChild(moreCard);
                     }
                 } else {
-                    vehicleCountElement.textContent = '0';
-                    noVehiclesElement.classList.remove('hidden');
                     console.log('No se encontraron vehículos para este usuario');
+                    vehicleCountElement.textContent = '0';
+                    errorElement.classList.add('hidden');
+                    
+                    // Mostrar mensaje personalizado cuando no hay vehículos
+                    const noVehiclesMessage = document.createElement('div');
+                    noVehiclesMessage.className = 'col-span-full text-center py-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm';
+                    noVehiclesMessage.innerHTML = `
+                        <div class="flex flex-col items-center justify-center space-y-4">
+                            <svg class="w-16 h-16 text-primary-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-white">No tienes vehículos registrados</h3>
+                            <p class="text-gray-600 dark:text-gray-400 mb-4">Registra tu primer vehículo para recibir alertas de Pico y Placa</p>
+                            <a href="/user/register-vehicle" class="inline-flex items-center px-6 py-3 text-base font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 shadow-md transition-all duration-200">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                                Registrar mi primer vehículo
+                            </a>
+                        </div>
+                    `;
+                    
+                    // Limpiar el contenedor y agregar el mensaje personalizado
+                    while (vehiclesContainer.firstChild) {
+                        if (vehiclesContainer.firstChild.id !== 'loading-vehicles' && 
+                            vehiclesContainer.firstChild.id !== 'no-vehicles' &&
+                            vehiclesContainer.firstChild.id !== 'error-loading-vehicles') {
+                            vehiclesContainer.removeChild(vehiclesContainer.firstChild);
+                        }
+                    }
+                    
+                    vehiclesContainer.appendChild(noVehiclesMessage);
+                    noVehiclesElement.classList.add('hidden');
                 }
             } catch (error) {
                 console.error('Error loading vehicles:', error);
-                document.getElementById('loading-vehicles').classList.add('hidden');
-                document.getElementById('vehicle-count').textContent = '0';
-                document.getElementById('no-vehicles').classList.remove('hidden');
-                console.error('Detalles del error:', error.message);
+                loadingElement.classList.add('hidden');
+                errorElement.classList.remove('hidden');
+                vehicleCountElement.textContent = '0';
             }
+            console.log('Finalizada la carga de vehículos');
         }
         
+        // Agregar event listener para el botón de recarga
+        document.addEventListener('DOMContentLoaded', function() {
+            const reloadButton = document.getElementById('reload-vehicles');
+            if (reloadButton) {
+                reloadButton.addEventListener('click', loadUserVehicles);
+            }
+        });
         function createVehicleCard(vehicle) {
             const card = document.createElement('div');
             card.className = 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow';
@@ -277,6 +347,7 @@ import StatusMessage from '../../components/StatusMessage.astro';
                 const nextRestrictionElement = document.getElementById('next-restriction');
                 
                 // Verificar autenticación antes de intentar cargar reglas
+                const authStore = useAuthStore.getState();
                 if (!authStore.isAuthenticated) {
                     console.log('Usuario no autenticado, intentando cargar reglas públicas');
                 }

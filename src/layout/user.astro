@@ -1,6 +1,7 @@
 ---
 import BaseLayout from './base.astro';
 import Sidebar from '../components/Sidebar.astro';
+import Footer from '../components/Footer.astro';
 
 // Enlaces para el panel de usuario
 const userLinks = [
@@ -8,8 +9,6 @@ const userLinks = [
   { href: '/user/register-vehicle', text: 'Registrar Vehículo', icon: 'Car' },
   { href: '/user/vehicles', text: 'Mis Vehículos', icon: 'Car' },
   { href: '/user/pico-y-placa', text: 'Pico y Placa', icon: 'Car' },
-  { href: '/user/pico-y-placa-details', text: 'Detalles Pico y Placa', icon: 'Car' },
-  { href: '/user/notifications', text: 'Notificaciones', icon: 'Settings' },
   { href: '/user/calendar', text: 'Calendario', icon: 'Calendar' },
 ];
 
@@ -28,10 +27,15 @@ const {
   keywords={keywords}
   {...restProps}
 >
-  <div class="flex h-screen bg-white dark:bg-gray-900">
-    <Sidebar title="Panel de Usuario" links={userLinks} />
-    <main class="flex-1 p-6 overflow-y-auto md:ml-64">
-      <slot />
-    </main>
+  <div class="flex flex-col min-h-screen bg-white dark:bg-gray-900">
+    <div class="flex flex-1">
+      <Sidebar title="Panel de Usuario" links={userLinks} />
+      <main class="flex-1 p-6 overflow-y-auto md:ml-64">
+        <slot />
+      </main>
+    </div>
+    <div class="md:ml-64">
+      <Footer />
+    </div>
   </div>
 </BaseLayout>

@@ -92,15 +92,20 @@ import StatusMessage from "../../components/StatusMessage.astro";
             }
             
             // Verificar también la autenticación en Directus
-            const isAuth = await isAuthenticated();
-            if (!isAuth) {
-                console.error('La sesión de Directus ha expirado');
-                // Actualizar el estado de autenticación en el store
-                authStore.logout();
-                window.location.href = '/login?session=expired';
-                return;
+            try {
+                const isAuth = await isAuthenticated();
+                if (!isAuth) {
+                    console.error('La sesión de Directus ha expirado');
+                    // Actualizar el estado de autenticación en el store
+                    authStore.logout();
+                    window.location.href = '/login?session=expired';
+                    return;
+                }
+            } catch (error) {
+                console.error('Error al verificar autenticación:', error);
+                // No redirigir inmediatamente en caso de error de verificación
+                // para evitar ciclos de redirección
             }
-            
             const form = document.getElementById('vehicle-form');
             const submitBtn = document.getElementById('submit-btn');
             const submitSpinner = document.getElementById('submit-spinner');
@@ -143,13 +148,10 @@ import StatusMessage from "../../components/StatusMessage.astro";
                     }
                     
                     // Crear objeto del vehículo
-                    const vehicleData = {
-                        Placa: formData.get('placa'),
-                        Tipo: formData.get('tipo')
-                    };
+                    const tipo = formData.get('tipo');
                     
-                    // Enviar al servidor
-                    const result = await createVehiculo(vehicleData);
+                    // Enviar al servidor con los parámetros individuales
+                    const result = await createVehiculo(placa, tipo);
                     
                     // Mostrar mensaje de éxito
                     showSuccessMessage('¡Vehículo registrado exitosamente!');

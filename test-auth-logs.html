@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generador de Logs de Prueba - PicoAlert</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    h1, h2 {
+      color: #333;
+    }
+    h1 {
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 10px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    textarea {
+      height: 100px;
+      font-family: monospace;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .button-group {
+      margin-top: 20px;
+    }
+    .status {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    .scenario-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .scenario-button {
+      background-color: #007bff;
+    }
+    .scenario-button:hover {
+      background-color: #0069d9;
+    }
+    .view-logs-button {
+      background-color: #6c757d;
+    }
+    .view-logs-button:hover {
+      background-color: #5a6268;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Generador de Logs de Prueba - PicoAlert</h1>
+    
+    <div class="card">
+      <h2>Escenarios de Autenticación</h2>
+      <p>Haz clic en un escenario para generar logs de prueba que simulen ese comportamiento:</p>
+      
+      <div class="scenario-buttons">
+        <button class="scenario-button" id="scenario-login-success">Login Exitoso</button>
+        <button class="scenario-button" id="scenario-login-fail">Login Fallido</button>
+        <button class="scenario-button" id="scenario-logout">Logout</button>
+        <button class="scenario-button" id="scenario-session-expired">Sesión Expirada</button>
+        <button class="scenario-button" id="scenario-auth-check">Verificación de Autenticación</button>
+        <button class="scenario-button" id="scenario-multiple-failures">Múltiples Intentos Fallidos</button>
+      </div>
+      
+      <button class="view-logs-button" id="view-logs">Ver Logs Generados</button>
+    </div>
+    
+    <div class="card">
+      <h2>Log Personalizado</h2>
+      
+      <div class="form-group">
+        <label for="log-level">Nivel:</label>
+        <select id="log-level">
+          <option value="DEBUG">DEBUG</option>
+          <option value="INFO" selected>INFO</option>
+          <option value="WARN">WARN</option>
+          <option value="ERROR">ERROR</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="log-category">Categoría:</label>
+        <select id="log-category">
+          <option value="auth">auth</option>
+          <option value="api">api</option>
+          <option value="session">session</option>
+          <option value="storage">storage</option>
+          <option value="custom">Personalizada</option>
+        </select>
+      </div>
+      
+      <div class="form-group" id="custom-category-group" style="display: none;">
+        <label for="custom-category">Categoría Personalizada:</label>
+        <input type="text" id="custom-category" placeholder="Ingresa una categoría personalizada">
+      </div>
+      
+      <div class="form-group">
+        <label for="log-message">Mensaje:</label>
+        <input type="text" id="log-message" placeholder="Mensaje del log">
+      </div>
+      
+      <div class="form-group">
+        <label for="log-data">Datos adicionales (JSON):</label>
+        <textarea id="log-data" placeholder="{\n  \"key\": \"value\"\n}"></textarea>
+      </div>
+      
+      <div class="button-group">
+        <button id="add-log">Añadir Log</button>
+        <button id="clear-logs">Limpiar Todos los Logs</button>
+      </div>
+      
+      <div id="status" class="status" style="display: none;"></div>
+    </div>
+  </div>
+
+  <script>
+    // Definición del módulo logger
+    const logger = {
+      // Niveles de log
+      LogLevel: {
+        DEBUG: 'DEBUG',
+        INFO: 'INFO',
+        WARN: 'WARN',
+        ERROR: 'ERROR'
+      },
+      
+      // Clave para almacenar los logs en localStorage
+      LOGS_KEY: 'picoalert-logs',
+      
+      // Obtener logs
+      getLogs() {
+        try {
+          const logsData = localStorage.getItem(this.LOGS_KEY);
+          return logsData ? JSON.parse(logsData) : [];
+        } catch (error) {
+          console.error('Error al recuperar logs:', error);
+          return [];
+        }
+      },
+      
+      // Guardar logs
+      saveLogs(logs) {
+        try {
+          localStorage.setItem(this.LOGS_KEY, JSON.stringify(logs));
+        } catch (error) {
+          console.error('Error al guardar logs:', error);
+        }
+      },
+      
+      // Añadir log
+      addLog(level, category, message, data = null) {
+        const timestamp = new Date().toISOString();
+        const log = {
+          timestamp,
+          level,
+          category,
+          message,
+          data
+        };
+        
+        // Mostrar en consola
+        console.log(`[${timestamp}] [${level}] [${category}] ${message}`, data || '');
+        
+        // Guardar en localStorage
+        const logs = this.getLogs();
+        logs.unshift(log); // Añadir al principio
+        
+        // Limitar a 100 logs
+        if (logs.length > 100) {
+          logs.length = 100;
+        }
+        
+        this.saveLogs(logs);
+        
+        return log;
+      },
+      
+      // Métodos para cada nivel
+      debug(category, message, data = null) {
+        return this.addLog(this.LogLevel.DEBUG, category, message, data);
+      },
+      
+      info(category, message, data = null) {
+        return this.addLog(this.LogLevel.INFO, category, message, data);
+      },
+      
+      warn(category, message, data = null) {
+        return this.addLog(this.LogLevel.WARN, category, message, data);
+      },
+      
+      error(category, message, data = null) {
+        return this.addLog(this.LogLevel.ERROR, category, message, data);
+      },
+      
+      // Limpiar logs
+      clearLogs() {
+        try {
+          localStorage.removeItem(this.LOGS_KEY);
+          return true;
+        } catch (e) {
+          console.error('Error al limpiar logs:', e);
+          return false;
+        }
+      }
+    };
+    
+    // Elementos del DOM
+    const logLevel = document.getElementById('log-level');
+    const logCategory = document.getElementById('log-category');
+    const customCategoryGroup = document.getElementById('custom-category-group');
+    const customCategory = document.getElementById('custom-category');
+    const logMessage = document.getElementById('log-message');
+    const logData = document.getElementById('log-data');
+    const addLogButton = document.getElementById('add-log');
+    const clearLogsButton = document.getElementById('clear-logs');
+    const statusElement = document.getElementById('status');
+    const viewLogsButton = document.getElementById('view-logs');
+    
+    // Escenarios predefinidos
+    const scenarioLoginSuccess = document.getElementById('scenario-login-success');
+    const scenarioLoginFail = document.getElementById('scenario-login-fail');
+    const scenarioLogout = document.getElementById('scenario-logout');
+    const scenarioSessionExpired = document.getElementById('scenario-session-expired');
+    const scenarioAuthCheck = document.getElementById('scenario-auth-check');
+    const scenarioMultipleFailures = document.getElementById('scenario-multiple-failures');
+    
+    // Mostrar/ocultar campo de categoría personalizada
+    logCategory.addEventListener('change', function() {
+      customCategoryGroup.style.display = this.value === 'custom' ? 'block' : 'none';
+    });
+    
+    // Añadir log
+    addLogButton.addEventListener('click', function() {
+      try {
+        const level = logLevel.value;
+        let category = logCategory.value;
+        if (category === 'custom') {
+          category = customCategory.value.trim();
+          if (!category) {
+            throw new Error('La categoría personalizada no puede estar vacía');
+          }
+        }
+        
+        const message = logMessage.value.trim();
+        if (!message) {
+          throw new Error('El mensaje no puede estar vacío');
+        }
+        
+        let data = null;
+        if (logData.value.trim()) {
+          try {
+            data = JSON.parse(logData.value);
+          } catch (e) {
+            throw new Error('Los datos adicionales deben ser un JSON válido: ' + e.message);
+          }
+        }
+        
+        logger[level.toLowerCase()](category, message, data);
+        
+        // Mostrar mensaje de éxito
+        showStatus('Log añadido correctamente', 'success');
+        
+        // Limpiar campos
+        logMessage.value = '';
+        logData.value = '';
+        
+      } catch (error) {
+        showStatus('Error: ' + error.message, 'error');
+      }
+    });
+    
+    // Limpiar logs
+    clearLogsButton.addEventListener('click', function() {
+      if (confirm('¿Estás seguro de que deseas eliminar todos los logs? Esta acción no se puede deshacer.')) {
+        if (logger.clearLogs()) {
+          showStatus('Todos los logs han sido eliminados', 'success');
+        } else {
+          showStatus('Error al eliminar los logs', 'error');
+        }
+      }
+    });
+    
+    // Ver logs
+    viewLogsButton.addEventListener('click', function() {
+      window.open('log-viewer.html', '_blank');
+    });
+    
+    // Mostrar mensaje de estado
+    function showStatus(message, type) {
+      statusElement.textContent = message;
+      statusElement.className = 'status ' + type;
+      statusElement.style.display = 'block';
+      
+      // Ocultar después de 3 segundos
+      setTimeout(() => {
+        statusElement.style.display = 'none';
+      }, 3000);
+    }
+    
+    // Escenario: Login Exitoso
+    scenarioLoginSuccess.addEventListener('click', function() {
+      const username = 'usuario@ejemplo.com';
+      
+      logger.info('auth', 'Intento de inicio de sesión', { username });
+      logger.debug('api', 'Enviando solicitud de login', { endpoint: '/api/auth/login', method: 'POST' });
+      logger.info('auth', 'Inicio de sesión exitoso', { username });
+      logger.debug('session', 'Creando sesión de usuario', { username });
+      logger.info('storage', 'Guardando datos de sesión', { key: 'auth-session' });
+      
+      showStatus('Escenario de login exitoso generado', 'success');
+    });
+    
+    // Escenario: Login Fallido
+    scenarioLoginFail.addEventListener('click', function() {
+      const username = 'usuario@ejemplo.com';
+      
+      logger.info('auth', 'Intento de inicio de sesión', { username });
+      logger.debug('api', 'Enviando solicitud de login', { endpoint: '/api/auth/login', method: 'POST' });
+      logger.error('auth', 'Error de autenticación: Credenciales inválidas', { 
+        username,
+        error: {
+          name: 'AuthError',
+          message: 'Credenciales inválidas',
+          status: 401
+        }
+      });
+      
+      showStatus('Escenario de login fallido generado', 'success');
+    });
+    
+    // Escenario: Logout
+    scenarioLogout.addEventListener('click', function() {
+      const username = 'usuario@ejemplo.com';
+      
+      logger.info('auth', 'Iniciando proceso de cierre de sesión', { username });
+      logger.debug('api', 'Enviando solicitud de logout', { endpoint: '/api/auth/logout', method: 'POST' });
+      logger.info('storage', 'Eliminando datos de sesión', { key: 'auth-session' });
+      logger.info('auth', 'Cierre de sesión completado', { username });
+      
+      showStatus('Escenario de logout generado', 'success');
+    });
+    
+    // Escenario: Sesión Expirada
+    scenarioSessionExpired.addEventListener('click', function() {
+      const username = 'usuario@ejemplo.com';
+      
+      logger.debug('api', 'Verificando estado de sesión', { endpoint: '/api/auth/check' });
+      logger.warn('auth', 'Sesión expirada o inválida', { username });
+      logger.info('storage', 'Eliminando datos de sesión expirada', { key: 'auth-session' });
+      logger.info('auth', 'Redirigiendo a página de login', { redirect: '/login' });
+      
+      showStatus('Escenario de sesión expirada generado', 'success');
+    });
+    
+    // Escenario: Verificación de Autenticación
+    scenarioAuthCheck.addEventListener('click', function() {
+      logger.debug('api', 'Verificando estado de autenticación', { endpoint: '/api/auth/check' });
+      logger.debug('storage', 'Comprobando datos de sesión', { key: 'auth-session' });
+      logger.info('auth', 'Usuario autenticado correctamente', { username: 'usuario@ejemplo.com' });
+      
+      showStatus('Escenario de verificación de autenticación generado', 'success');
+    });
+    
+    // Escenario: Múltiples Intentos Fallidos
+    scenarioMultipleFailures.addEventListener('click', function() {
+      const username = 'usuario@ejemplo.com';
+      
+      // Primer intento
+      logger.info('auth', 'Intento de inicio de sesión (1)', { username });
+      logger.error('auth', 'Error de autenticación: Credenciales inválidas', { 
+        username,
+        error: {
+          name: 'AuthError',
+          message: 'Credenciales inválidas',
+          status: 401,
+          attempt: 1
+        }
+      });
+      
+      // Segundo intento
+      logger.info('auth', 'Intento de inicio de sesión (2)', { username });
+      logger.error('auth', 'Error de autenticación: Credenciales inválidas', { 
+        username,
+        error: {
+          name: 'AuthError',
+          message: 'Credenciales inválidas',
+          status: 401,
+          attempt: 2
+        }
+      });
+      
+      // Tercer intento
+      logger.info('auth', 'Intento de inicio de sesión (3)', { username });
+      logger.warn('auth', 'Múltiples intentos fallidos de inicio de sesión', { 
+        username,
+        attempts: 3
+      });
+      logger.error('auth', 'Error de autenticación: Demasiados intentos fallidos', { 
+        username,
+        error: {
+          name: 'AuthError',
+          message: 'Demasiados intentos fallidos. Cuenta bloqueada temporalmente.',
+          status: 429,
+          attempt: 3
+        }
+      });
+      
+      showStatus('Escenario de múltiples intentos fallidos generado', 'success');
+    });
+  </script>
+</body>
+</html>
