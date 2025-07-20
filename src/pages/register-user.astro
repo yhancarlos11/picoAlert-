@@ -33,11 +33,6 @@ import Layout from '../layout/layout.astro';
                         </div>
                         
                         <div>
-                            <label for="telefono" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Teléfono</label>
-                            <input type="tel" name="telefono" id="telefono" class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="+57 300 123 4567" required>
-                        </div>
-                        
-                        <div>
                             <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contraseña</label>
                             <input type="password" name="password" id="password" placeholder="••••••••" class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" required>
                         </div>
@@ -77,7 +72,7 @@ import Layout from '../layout/layout.astro';
     </section>
 
     <script>
-        import { createUsuario } from '../lib/api.js';
+        import { createDirectusUser } from '../lib/api.js';
         
         document.addEventListener('DOMContentLoaded', () => {
             const form = document.getElementById('register-form');
@@ -141,7 +136,6 @@ import Layout from '../layout/layout.astro';
                 const formData = new FormData(form);
                 const nombre = formData.get('nombre');
                 const email = formData.get('email');
-                const telefono = formData.get('telefono');
                 const password = formData.get('password');
                 const confirmPassword = formData.get('confirm-password');
                 
@@ -156,20 +150,26 @@ import Layout from '../layout/layout.astro';
                 
                 try {
                     console.log('Preparando datos de usuario para registro');
+                    
+                    // Dividir el nombre completo en nombre y apellido
+                    const nombreCompleto = nombre.trim().split(' ');
+                    const firstName = nombreCompleto[0] || '';
+                    const lastName = nombreCompleto.slice(1).join(' ') || '';
+                    
+                    // Preparar datos para la API de Directus - solo los campos necesarios
                     const userData = {
-                        Nombre: nombre,
-                        Correo: email,
-                        Telefono: telefono,
-                        Clave: password,
-                        Ciudad: 1 // Bogotá por defecto
+                        email: email,
+                        password: password,
+                        first_name: firstName
                     };
-                    console.log('Datos de usuario preparados:', { ...userData, Clave: '***OCULTA***' });
                     
-                    console.log('Llamando a createUsuario');
-                    const result = await createUsuario(userData);
-                    console.log('Resultado de createUsuario:', result);
+                    console.log('Datos de usuario preparados:', { ...userData, password: '***OCULTA***' });
                     
-                    if (result) {
+                    console.log('Llamando a createDirectusUser');
+                    const result = await createDirectusUser(userData);
+                    console.log('Resultado de createDirectusUser:', result);
+                    
+                    if (result && result.success) {
                         console.log('Registro exitoso, mostrando mensaje de éxito');
                         showSuccess('Cuenta creada exitosamente. Redirigiendo al login...');
                         
@@ -184,8 +184,8 @@ import Layout from '../layout/layout.astro';
                             window.location.href = '/login';
                         }, 2000);
                     } else {
-                        console.error('Resultado de createUsuario es nulo o indefinido');
-                        showError('Error al crear la cuenta. Por favor, intenta de nuevo.');
+                        console.error('Error en createUsuario:', result?.error || 'Resultado desconocido');
+                        showError(result?.error || 'Error al crear la cuenta. Por favor, intenta de nuevo.');
                     }
                 } catch (error) {
                     console.error('Error durante el registro:', error);
@@ -197,12 +197,18 @@ import Layout from '../layout/layout.astro';
                     });
                     
                     // Manejar errores específicos
-                    if (error.message.includes('email') || error.message.includes('Correo')) {
+                    if (error.message && (error.message.includes('email') || error.message.includes('duplicate'))) {
                         console.log('Error detectado: Email ya registrado');
                         showError('Este email ya está registrado. Por favor, usa otro email.');
-                    } else if (error.message.includes('400')) {
-                        console.log('Error detectado: Datos inválidos (400)');
+                    } else if (error.message && error.message.includes('validation')) {
+                        console.log('Error detectado: Datos inválidos');
                         showError('Datos inválidos. Por favor, verifica la información.');
+                    } else if (error.message && error.message.includes('timeout')) {
+                        console.log('Error detectado: Timeout');
+                        showError('El servidor tardó demasiado en responder. Por favor, intenta de nuevo.');
+                    } else if (error.message && error.message.includes('network')) {
+                        console.log('Error detectado: Problema de red');
+                        showError('Problema de conexión a internet. Por favor, verifica tu conexión e intenta de nuevo.');
                     } else {
                         console.log('Error general de conexión');
                         showError('Error de conexión. Por favor, intenta de nuevo.');

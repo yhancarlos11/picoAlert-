@@ -4,12 +4,12 @@
  */
 
 // Importar los módulos necesarios del SDK de Directus
-import { createDirectus, authentication, rest, readItems, createItem, login, refresh } from '@directus/sdk';
+import { createDirectus, rest, readItems, createItem, login, refresh, createUser } from '@directus/sdk';
 
 // Configurar el cliente de Directus
 const DIRECTUS_URL = 'https://directus.bryanmedin4.com';
-// Usar el modo de autenticación 'json' ya que el servidor tiene Access-Control-Allow-Origin: *
-const directus = createDirectus(DIRECTUS_URL).with(authentication('json')).with(rest());
+// Configurar el cliente de Directus con REST
+const directus = createDirectus(DIRECTUS_URL).with(rest());
 
 // Timeout para operaciones de autenticación (en milisegundos)
 const AUTH_TIMEOUT = 10000; // 10 segundos
@@ -25,7 +25,7 @@ export async function authenticateUser(email, password) {
     console.log('Intentando autenticar con Directus:', { email });
     
     // Crear una promesa con timeout para evitar que la operación se quede colgada
-    const loginPromise = directus.login({ email, password, mode: 'json' });
+    const loginPromise = directus.request(login({ email, password }));
     
     // Establecer un timeout
     const timeoutPromise = new Promise((_, reject) => {
@@ -136,7 +136,7 @@ export async function refreshToken(refreshToken) {
     console.log('Intentando refrescar token con Directus');
     
     // Crear una promesa con timeout para evitar que la operación se quede colgada
-    const refreshPromise = directus.request(refresh({ refresh_token: refreshToken, mode: 'json' }));
+    const refreshPromise = directus.refresh(refreshToken);
     
     // Establecer un timeout
     const timeoutPromise = new Promise((_, reject) => {
@@ -231,6 +231,160 @@ export async function createVehiculo(placa, tipo) {
   }
 }
 
+/**
+ * Crea un nuevo usuario en Directus
+ * @param {Object} userData - Datos del usuario a crear
+ * @param {string} userData.Nombre - Nombre completo del usuario
+ * @param {string} userData.Correo - Correo electrónico del usuario
+ * @param {string} userData.Telefono - Teléfono del usuario
+ * @param {string} userData.Clave - Contraseña del usuario
+ * @param {number} userData.Ciudad - ID de la ciudad del usuario
+ * @returns {Promise<Object>} Resultado de la creación del usuario
+ */
+export async function createUsuario(userData) {
+  try {
+    console.log('Creando usuario en Directus:', { ...userData, Clave: '***OCULTA***' });
+    
+    // Crear una promesa con timeout para evitar que la operación se quede colgada
+    const createPromise = directus.request(
+      createItem('Usuario', {
+        Nombre: userData.Nombre,
+        Correo: userData.Correo,
+        Telefono: userData.Telefono,
+        Clave: userData.Clave,
+        Ciudad: userData.Ciudad,
+        // Campos adicionales que podrían ser necesarios según la configuración de Directus
+        status: 'active', // Estado del usuario (active, invited, draft, etc.)
+        role: userData.Role || '3' // ID del rol por defecto (3 suele ser el rol de usuario normal)
+      })
+    );
+    
+    // Establecer un timeout
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Tiempo de espera agotado al crear usuario')), AUTH_TIMEOUT);
+    });
+    
+    // Usar Promise.race para limitar el tiempo de espera
+    const result = await Promise.race([createPromise, timeoutPromise]);
+    
+    console.log('Usuario creado correctamente:', { ...result, Clave: '***OCULTA***' });
+    
+    return {
+      success: true,
+      data: result
+    };
+  } catch (error) {
+    console.error('Error al crear usuario:', error);
+    
+    // Manejo específico de errores comunes
+    if (error.message && error.message.includes('duplicate') || 
+        (error.errors && error.errors.some(e => e.message && e.message.includes('duplicate')))) {
+      return {
+        success: false,
+        error: 'Este correo electrónico ya está registrado. Por favor, utiliza otro.'
+      };
+    }
+    
+    if (error.message && error.message.includes('validation')) {
+      return {
+        success: false,
+        error: 'Los datos proporcionados no son válidos. Por favor, verifica la información.'
+      };
+    }
+    
+    return {
+      success: false,
+      error: error.message || 'Error al crear usuario'
+    };
+  }
+}
+
+/**
+ * Crea un nuevo usuario utilizando el SDK de Directus
+ * @param {Object} userData - Datos del usuario a crear
+ * @param {string} userData.email - Correo electrónico del usuario (requerido)
+ * @param {string} userData.password - Contraseña del usuario (requerido)
+ * @param {string} userData.first_name - Nombre del usuario
+ * @returns {Promise<Object>} Resultado de la creación del usuario
+ */
+export async function createDirectusUser(userData) {
+  try {
+    console.log('Creando usuario con SDK de Directus:', { 
+      ...userData, 
+      password: '***OCULTA***' 
+    });
+    
+    // Validar campos requeridos
+    if (!userData.email || !userData.password) {
+      throw new Error('El email y la contraseña son obligatorios');
+    }
+    
+    // Preparar datos para la API de Directus - solo los campos necesarios
+    const userPayload = {
+      email: userData.email,
+      password: userData.password,
+      first_name: userData.first_name || '',
+      role: "4bf867c2-ea16-4c47-a042-efe0b39ecce9" // Asignar el rol específico
+    };
+    
+    // Crear una promesa con timeout para evitar que la operación se quede colgada
+    const requestPromise = directus.request(createUser(userPayload));
+    
+    // Establecer un timeout
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Tiempo de espera agotado al crear usuario')), AUTH_TIMEOUT);
+    });
+    
+    // Usar Promise.race para limitar el tiempo de espera
+    const result = await Promise.race([requestPromise, timeoutPromise]);
+    
+    console.log('Usuario creado correctamente con SDK de Directus:', { 
+       ...result, 
+       password: '***OCULTA***' 
+     });
+     
+     // Devolver un objeto estructurado con success: true y los datos del usuario
+     return {
+       success: true,
+       data: result,
+       message: 'Usuario creado exitosamente'
+     };
+   } catch (error) {
+     console.error('Error al crear usuario con SDK de Directus:', error);
+     
+     // Manejar errores específicos
+     // Verificar si el error tiene la estructura esperada del SDK de Directus
+     let errorMessage = 'Error desconocido al crear usuario';
+     
+     if (error && error.errors && Array.isArray(error.errors) && error.errors.length > 0) {
+       errorMessage = error.errors[0].message || 'Error desconocido';
+       
+       if (errorMessage.includes('Duplicate entry') || errorMessage.includes('already exists') || errorMessage.includes('has to be unique')) {
+         errorMessage = 'El correo electrónico ya está registrado';
+       } else if (errorMessage.includes('validation') || errorMessage.includes('Validation')) {
+         errorMessage = 'Error de validación: ' + errorMessage;
+       } else if (errorMessage.includes('permission') || errorMessage.includes('Permission') || 
+                    errorMessage.includes('FORBIDDEN')) {
+         errorMessage = 'No tienes permisos para crear usuarios';
+       }
+     } else if (error.message) {
+       errorMessage = error.message;
+       
+       if (error.message.includes('Tiempo de espera agotado')) {
+         errorMessage = 'Tiempo de espera agotado al crear el usuario. Inténtalo de nuevo.';
+       }
+     }
+     
+     // Devolver un objeto estructurado con success: false y el mensaje de error
+     return {
+       success: false,
+       error: errorMessage
+     };
+  }
+}
+    
+
+
 export async function isAuthenticated(refreshToken = null) {
   try {
     console.log('Verificando autenticación con Directus');
@@ -258,14 +412,15 @@ export async function isAuthenticated(refreshToken = null) {
       if (refreshToken) {
         console.log('Intentando refrescar token automáticamente');
         try {
-          const refreshResult = await refreshToken(refreshToken);
-          if (refreshResult.success) {
+          // Usar el método refresh del SDK de Directus
+          const refreshResult = await directus.refresh(refreshToken);
+          if (refreshResult && refreshResult.access_token) {
             console.log('Token refrescado automáticamente con éxito');
             return { 
               isAuthenticated: true, 
               tokenRefreshed: true,
-              newToken: refreshResult.token,
-              newRefreshToken: refreshResult.refreshToken,
+              newToken: refreshResult.access_token,
+              newRefreshToken: refreshResult.refresh_token,
               expires: refreshResult.expires
             };
           }
