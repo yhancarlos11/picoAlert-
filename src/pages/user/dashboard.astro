@@ -44,13 +44,21 @@ import StatusMessage from '../../components/StatusMessage.astro';
                     </div>
                 </div>
                 
-                <div class="bg-white dark:bg-yellow-900/20 p-6 rounded-lg border border-yellow-100 dark:border-yellow-800 shadow-sm">
+                <div class="bg-white dark:bg-yellow-900/20 p-6 rounded-lg border border-yellow-100 dark:border-yellow-800 shadow-sm flex items-center justify-between">
+                <div>
                     <h3 class="text-lg font-semibold text-yellow-900 dark:text-yellow-100 mb-2">Próxima Restricción</h3>
                     <p id="next-restriction" class="text-lg font-bold text-yellow-600 dark:text-yellow-400">-</p>
                     <p class="text-sm text-yellow-700 dark:text-yellow-300">Para tus vehículos</p>
                 </div>
-            </div>
-
+                <a 
+                      href="/user/movility-suggestion" 
+                      class="ml-2 p-2 rounded-full hover:bg-yellow-100 dark:hover:bg-yellow-800 transition-all duration-200"
+                      title="Movilidad sostenible: consejos para moverte mejor y cuidar el ambiente">
+                 <svg class="w-5 h-5 text-yellow-600 dark:text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+               </svg></a>
+                </div>
+                </div>
             <!-- Vehículos recientes -->
             <div class="mb-8">
                 <div class="flex justify-between items-center mb-4">

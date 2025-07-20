@@ -22,5 +22,8 @@
     "tailwindcss": "^3.3.5",
     "zod": "^3.25.76",
     "zustand": "^5.0.6"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.4"
   }
 }
