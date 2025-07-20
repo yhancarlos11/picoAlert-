@@ -93,8 +93,8 @@ import StatusMessage from "../../components/StatusMessage.astro";
             
             // Verificar también la autenticación en Directus
             try {
-                const isAuth = await isAuthenticated();
-                if (!isAuth) {
+                const authResult = await isAuthenticated();
+                if (typeof authResult === 'object' && authResult !== null && 'isAuthenticated' in authResult && !authResult.isAuthenticated) {
                     console.error('La sesión de Directus ha expirado');
                     // Actualizar el estado de autenticación en el store
                     authStore.logout();
@@ -110,28 +110,34 @@ import StatusMessage from "../../components/StatusMessage.astro";
             const submitBtn = document.getElementById('submit-btn');
             const submitSpinner = document.getElementById('submit-spinner');
             const submitText = document.getElementById('submit-text');
-            const messageContainer = document.getElementById('message-container');
-            const successMessage = document.getElementById('success-message');
-            const errorMessage = document.getElementById('error-message');
-            const successText = document.getElementById('success-text');
-            const errorText = document.getElementById('error-text');
             
             // Formatear placa en mayúsculas
-            document.getElementById('placa').addEventListener('input', function(e) {
-                e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-            });
+            const placaInput = document.getElementById('placa');
+            if (placaInput) {
+                placaInput.addEventListener('input', function(e) {
+                    const target = e.target as HTMLInputElement;
+                    target.value = target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                });
+            }
             
-            form.addEventListener('submit', async (e) => {
+            form?.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 
                 // Mostrar estado de carga
-                submitBtn.disabled = true;
-                submitSpinner.classList.remove('hidden');
-                submitText.textContent = 'Registrando...';
-                hideMessages();
+                if (submitBtn instanceof HTMLButtonElement) {
+                    submitBtn.disabled = true;
+                }
+                submitSpinner?.classList.remove('hidden');
+                if (submitText) {
+                    submitText.textContent = 'Registrando...';
+                }
+                window.hideMessages();
                 
                 try {
-                    const formData = new FormData(form);
+                    if (!form) {
+                        throw new Error('Formulario no encontrado');
+                    }
+                    const formData = new FormData(form as HTMLFormElement);
                     
                     // Validar campos requeridos
                     const requiredFields = ['placa', 'tipo'];
@@ -143,7 +149,7 @@ import StatusMessage from "../../components/StatusMessage.astro";
                     
                     // Validar formato de placa
                     const placa = formData.get('placa');
-                    if (placa.length < 5 || placa.length > 7) {
+                    if (placa && typeof placa === 'string' && (placa.length < 5 || placa.length > 7)) {
                         throw new Error('La placa debe tener entre 5 y 7 caracteres');
                     }
                     
@@ -151,10 +157,14 @@ import StatusMessage from "../../components/StatusMessage.astro";
                     const tipo = formData.get('tipo');
                     
                     // Enviar al servidor con los parámetros individuales
-                    const result = await createVehiculo(placa, tipo);
-                    
-                    // Mostrar mensaje de éxito
-                    showSuccessMessage('¡Vehículo registrado exitosamente!');
+                    if (typeof placa === 'string' && typeof tipo === 'string') {
+                        const result = await createVehiculo(placa, tipo);
+                        
+                        // Mostrar mensaje de éxito
+                        window.showSuccessMessage('¡Vehículo registrado exitosamente!');
+                    } else {
+                        throw new Error('Los valores de placa y tipo deben ser cadenas de texto');
+                    }
                     
                     // Limpiar formulario
                     form.reset();
@@ -170,7 +180,7 @@ import StatusMessage from "../../components/StatusMessage.astro";
                     // Verificar si el error está relacionado con la autenticación
                     if (error.message && (error.message.includes('sesión') || error.message.includes('autenticación') || error.message.includes('token'))) {
                         // Mostrar un mensaje más específico
-                        showErrorMessage('Tu sesión ha expirado. Serás redirigido para iniciar sesión nuevamente.');
+                        window.showErrorMessage('Tu sesión ha expirado. Serás redirigido para iniciar sesión nuevamente.');
                         
                         // Redirigir después de 2 segundos
                         setTimeout(() => {
@@ -181,37 +191,22 @@ import StatusMessage from "../../components/StatusMessage.astro";
                         }, 2000);
                     } else {
                         // Para otros errores, mostrar el mensaje normal
-                        showErrorMessage(error.message || 'Error al registrar el vehículo. Por favor, intenta de nuevo.');
+                        window.showErrorMessage(error.message || 'Error al registrar el vehículo. Por favor, intenta de nuevo.');
                     }
                 } finally {
                     // Restaurar estado del botón
-                    submitBtn.disabled = false;
-                    submitSpinner.classList.add('hidden');
-                    submitText.textContent = 'Registrar Vehículo';
+                    if (submitBtn instanceof HTMLButtonElement) {
+                        submitBtn.disabled = false;
+                    }
+                    submitSpinner?.classList.add('hidden');
+                    if (submitText) {
+                        submitText.textContent = 'Registrar Vehículo';
+                    }
                 }
             });
             
-            function showSuccessMessage(message) {
-                hideMessages();
-                successText.textContent = message;
-                successMessage.classList.remove('hidden');
-                messageContainer.classList.remove('hidden');
-                messageContainer.scrollIntoView({ behavior: 'smooth' });
-            }
-            
-            function showErrorMessage(message) {
-                hideMessages();
-                errorText.textContent = message;
-                errorMessage.classList.remove('hidden');
-                messageContainer.classList.remove('hidden');
-                messageContainer.scrollIntoView({ behavior: 'smooth' });
-            }
-            
-            function hideMessages() {
-                successMessage.classList.add('hidden');
-                errorMessage.classList.add('hidden');
-                messageContainer.classList.add('hidden');
-            }
+            // Usamos las funciones globales definidas en el componente StatusMessage.astro
+            // No necesitamos definir estas funciones localmente
         });
     </script>
 </UserLayout>

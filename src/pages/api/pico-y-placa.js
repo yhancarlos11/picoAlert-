@@ -3,7 +3,6 @@
  * Este endpoint recibe una placa y devuelve si puede circular o no
  */
 import { getEstadoPicoYPlaca } from '../../lib/pico-y-placa.js';
-import logger from '../../lib/logger.js';
 
 export async function post({ request }) {
   try {
@@ -11,11 +10,11 @@ export async function post({ request }) {
     const data = await request.json();
     const { placa, tipoVehiculoExento = false } = data;
     
-    logger.info('api', 'Solicitud de verificación de pico y placa', { placa, tipoVehiculoExento });
+    console.log('Solicitud de verificación de pico y placa', { placa, tipoVehiculoExento });
     
     // Validar la placa
     if (!placa || typeof placa !== 'string' || placa.length < 5) {
-      logger.warn('api', 'Placa inválida en solicitud', { placa });
+      console.warn('Placa inválida en solicitud', { placa });
       return new Response(
         JSON.stringify({
           estado: 'ERROR',
@@ -34,7 +33,7 @@ export async function post({ request }) {
     
     // Obtener el estado de pico y placa
     const resultado = await getEstadoPicoYPlaca(placa, tipoVehiculoExento);
-    logger.info('api', 'Resultado de verificación de pico y placa', { 
+    console.log('Resultado de verificación de pico y placa', { 
       placa, 
       estado: resultado.estado,
       mensaje: resultado.mensaje
@@ -51,7 +50,7 @@ export async function post({ request }) {
       }
     );
   } catch (error) {
-    logger.error('api', 'Error en endpoint de pico y placa', { 
+    console.error('Error en endpoint de pico y placa', { 
       message: error.message, 
       stack: error.stack 
     });

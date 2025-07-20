@@ -5,8 +5,9 @@
  * e integra la funcionalidad de demostración
  */
 import Layout from "../layout/layout.astro";
-import { getVehiculos } from '../lib/api.js';
+import { getVehiculos, getReglasPicoYPlaca } from '../lib/api.js';
 import PicoPlacaStatus from '../components/PicoPlacaStatus.astro';
+import StatusMessage from '../components/StatusMessage.astro';
 
 // Obtener fecha actual formateada
 const hoy = new Date();
@@ -17,9 +18,14 @@ const fechaFormateada = hoy.toLocaleDateString('es-ES', {
   day: 'numeric'
 });
 
+// Obtener las reglas de pico y placa desde el endpoint
+const reglas = await getReglasPicoYPlaca();
+
 // Determinar los dígitos restringidos hoy
 const esDiaImpar = hoy.getDate() % 2 !== 0;
-const digitosRestringidos = esDiaImpar ? '6, 7, 8, 9, 0' : '1, 2, 3, 4, 5';
+// Día impar -> item1 -> dígitos obtenidos del endpoint
+// Día par -> item2 -> dígitos obtenidos del endpoint
+const digitosRestringidos = esDiaImpar ? reglas.item1.join(', ') : reglas.item2.join(', ');
 const esFindeSemana = hoy.getDay() === 0 || hoy.getDay() === 6;
 
 // Obtener vehículos del usuario si está autenticado
@@ -75,12 +81,12 @@ const fechasDemo = [
                             <tr>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">Día par</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">Lunes a viernes</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">1, 2, 3, 4, 5</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{reglas.item2.join(', ')}</td>
                             </tr>
                             <tr>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">Día impar</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">Lunes a viernes</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">6, 7, 8, 9, 0</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{reglas.item1.join(', ')}</td>
                             </tr>
                             <tr>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">Fin de semana</td>
@@ -92,20 +98,70 @@ const fechasDemo = [
                 </div>
             </div>
             
-            {vehiculoUsuario && (
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-                    <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4">Tu vehículo</h2>
-                    <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                        <h3 class="text-lg font-medium text-gray-800 dark:text-white mb-2">Placa: {vehiculoUsuario.placa}</h3>
-                        <PicoPlacaStatus 
-                            placa={vehiculoUsuario.placa} 
-                            tipoVehiculoExento={vehiculoUsuario.tipoVehiculoExento || false} 
-                            showDetails={true} 
-                        />
+            {/* La sección "Tu vehículo" se ha eliminado para usuarios no logueados */}
+            
+            <!-- Componente para mostrar mensajes de estado -->
+            <StatusMessage />
+            
+            <!-- Sección de invitación a registrarse -->
+            <div class="bg-gradient-to-r from-primary-50 to-secondary-50 dark:from-primary-900/30 dark:to-secondary-900/30 rounded-lg shadow-lg p-6 mb-8 border border-primary-100 dark:border-primary-800 transform transition-all duration-300 hover:scale-[1.01] hover:shadow-xl">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div class="flex-1">
+                        <h2 class="text-2xl font-bold text-primary-800 dark:text-primary-200 mb-3 flex items-center">
+                            <svg class="w-6 h-6 mr-2 text-secondary-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"></path>
+                            </svg>
+                            ¿Quieres recibir notificaciones de Pico y Placa?
+                        </h2>
+                        <p class="text-primary-700 dark:text-primary-300 mb-4 text-lg">Regístrate gratis y recibe alertas personalizadas en tu dispositivo y correo electrónico cuando a tus vehículos les toque Pico y Placa.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-secondary-500 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span class="text-primary-700 dark:text-primary-300">Notificaciones personalizadas</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-secondary-500 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span class="text-primary-700 dark:text-primary-300">Alertas con anticipación</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-secondary-500 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span class="text-primary-700 dark:text-primary-300">Gestión de múltiples vehículos</span>
+                            </div>
+                            <div class="flex items-start">
+                                <svg class="w-5 h-5 text-secondary-500 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span class="text-primary-700 dark:text-primary-300">Completamente gratis</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0 flex flex-col items-center">
+                        <a href="/register-user" id="register-button" class="inline-flex justify-center items-center py-3 px-6 text-base font-medium text-center text-white rounded-lg bg-secondary-600 hover:bg-secondary-700 focus:ring-4 focus:ring-secondary-300 dark:focus:ring-secondary-900 shadow-lg transition-all duration-300 w-full mb-3 relative overflow-hidden group">
+                            <span class="relative z-10 flex items-center">
+                                Registrarme Ahora
+                                <svg class="w-4 h-4 ms-2 rtl:rotate-180 group-hover:translate-x-1 transition-transform duration-300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
+                                </svg>
+                            </span>
+                            <span class="absolute inset-0 bg-gradient-to-r from-secondary-500 to-primary-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0"></span>
+                        </a>
+                        <a href="/login" class="text-sm text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300 transition-colors duration-200">¿Ya tienes cuenta? Inicia sesión</a>
+                        <div class="mt-3 text-xs text-gray-500 dark:text-gray-400 flex items-center">
+                            <svg class="w-4 h-4 mr-1 text-secondary-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"></path>
+                            </svg>
+                            <span id="user-count" class="transition-colors duration-500">1,234 usuarios registrados</span>
+                        </div>
                     </div>
                 </div>
-            )}
-            
+            </div>
+
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
                 <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4">Verificar placa</h2>
                 
@@ -120,6 +176,7 @@ const fechasDemo = [
                                 class="w-full p-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
                                 placeholder="Ej. ABC123" 
                                 required 
+                                style="text-transform: uppercase;"
                             />
                         </div>
                         
@@ -167,14 +224,68 @@ const fechasDemo = [
                     ))}
                 </div>
             </div>
-            
 
         </div>
     </div>
   </section>
 </Layout>
 
-<script>
+<script define:vars={{ reglas }}>
+  // Manejar el botón de registro y contador de usuarios
+  document.addEventListener('DOMContentLoaded', () => {
+    const registerButton = document.getElementById('register-button');
+    const userCountElement = document.getElementById('user-count');
+    
+    // Manejar el botón de registro
+    if (registerButton) {
+      registerButton.addEventListener('click', (e) => {
+        // Prevenir la navegación inmediata para mostrar un mensaje
+        e.preventDefault();
+        
+        // Mostrar mensaje de información
+        if (typeof window.showSuccessMessage === 'function') {
+          window.showSuccessMessage('Redirigiendo a la página de registro...');
+        }
+        
+        // Redirigir después de un breve retraso para que el usuario vea el mensaje
+        setTimeout(() => {
+          window.location.href = '/register-user';
+        }, 1000);
+      });
+    }
+    
+    // Simular contador de usuarios que aumenta gradualmente
+    if (userCountElement) {
+      // Número base de usuarios (ficticio)
+      const baseUsers = 1234;
+      
+      // Función para formatear números con comas
+      const formatNumber = (num) => {
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      };
+      
+      // Actualizar contador cada cierto tiempo
+      let currentUsers = baseUsers;
+      userCountElement.textContent = `${formatNumber(currentUsers)} usuarios registrados`;
+      
+      // Incrementar el contador aleatoriamente cada 30-60 segundos
+      setInterval(() => {
+        // Incremento aleatorio entre 1 y 3
+        const increment = Math.floor(Math.random() * 3) + 1;
+        currentUsers += increment;
+        
+        // Actualizar el texto con animación
+        userCountElement.classList.add('text-secondary-500');
+        userCountElement.textContent = `${formatNumber(currentUsers)} usuarios registrados`;
+        
+        // Volver al color normal después de la animación
+        setTimeout(() => {
+          userCountElement.classList.remove('text-secondary-500');
+        }, 1000);
+      }, Math.random() * 30000 + 30000); // Entre 30 y 60 segundos
+    }
+  });
+  
   // Función para verificar si un vehículo puede circular
   async function verificarPicoYPlaca(placa, tipoVehiculoExento = false) {
     try {
@@ -211,7 +322,7 @@ const fechasDemo = [
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
         
-        const placa = document.getElementById('placa').value;
+        const placa = document.getElementById('placa').value.toUpperCase();
         const exento = document.getElementById('exento').checked;
         
         // Mostrar indicador de carga
@@ -256,13 +367,16 @@ const fechasDemo = [
               puedeCircular = true;
               mensaje = 'Vehículo exento de restricción';
             } else {
+              // Obtener las reglas de pico y placa desde el endpoint (ya obtenidas al inicio de la página)
               // Aplicar reglas según si el día es par o impar
-              const digitosRestringidos = diaEsPar ? ['1', '2', '3', '4', '5'] : ['6', '7', '8', '9', '0'];
+              // Día par -> item2 (ID 2) -> dígitos obtenidos del endpoint
+              // Día impar -> item1 (ID 1) -> dígitos obtenidos del endpoint
+              const digitosRestringidos = diaEsPar ? reglas.item2 : reglas.item1;
               const estaRestringido = digitosRestringidos.includes(ultimoDigito);
               puedeCircular = !estaRestringido;
               
               reglaAplicada = {
-                id: diaEsPar ? 1 : 2,
+                id: diaEsPar ? 2 : 1,  // ID 2 para días pares, ID 1 para días impares
                 Ultimo_Digito: digitosRestringidos,
                 tipo: 'Restricción'
               };
@@ -338,9 +452,17 @@ const fechasDemo = [
                     ${estadoSimulado.detalles.reglaAplicada ? `
                       <div class="mt-2">
                         <p><strong>Regla aplicada:</strong></p>
-                        <pre class="mt-1 text-xs p-2 bg-gray-50 dark:bg-gray-800 rounded overflow-x-auto">
-                          ${JSON.stringify(estadoSimulado.detalles.reglaAplicada, null, 2)}
-                        </pre>
+                        <div class="mt-1 p-3 bg-gray-50 dark:bg-gray-800 rounded">
+                          <p class="text-sm mb-2">
+                            <span class="font-medium">Tipo de restricción:</span> ${estadoSimulado.detalles.reglaAplicada.tipo}
+                          </p>
+                          <p class="text-sm mb-2">
+                            <span class="font-medium">Dígitos restringidos:</span> ${estadoSimulado.detalles.reglaAplicada.Ultimo_Digito.join(', ')}
+                          </p>
+                          <p class="text-sm">
+                            <span class="font-medium">Aplicable en:</span> ${estadoSimulado.detalles.reglaAplicada.Ultimo_Digito === reglas.item1 ? 'Días impares' : 'Días pares'}
+                          </p>
+                        </div>
                       </div>
                     ` : ''}
                   </div>

@@ -1,6 +1,5 @@
-import logger from './logger.js';
-
-// Ya no importamos getReglasPicoYPlaca porque ahora usamos reglas locales
+// Importamos getReglasPicoYPlaca para obtener las reglas dinámicamente
+import { getReglasPicoYPlaca } from './api.js';
 
 /**
  * Función para determinar si un vehículo puede circular según las reglas de pico y placa
@@ -11,11 +10,13 @@ import logger from './logger.js';
  */
 export async function puedeCircular(placa, fecha = new Date(), tipoVehiculoExento = false) {
   try {
-    logger.info('pico-y-placa', 'Verificando si puede circular', { placa, fecha: fecha.toISOString(), tipoVehiculoExento });
+    // Convertir la placa a mayúsculas
+    placa = placa.toUpperCase();
+    console.log('Verificando si puede circular', { placa, fecha: fecha.toISOString(), tipoVehiculoExento });
     
     // Validar placa
     if (!placa || typeof placa !== 'string' || placa.length < 5) {
-      logger.warn('pico-y-placa', 'Placa inválida', { placa });
+      console.warn('Placa inválida', { placa });
       return { 
         puedeCircular: false, 
         mensaje: 'Placa inválida', 
@@ -25,7 +26,7 @@ export async function puedeCircular(placa, fecha = new Date(), tipoVehiculoExent
     
     // Obtener el último dígito de la placa
     const ultimoDigito = placa.slice(-1);
-    logger.debug('pico-y-placa', 'Último dígito de la placa', { ultimoDigito });
+    console.debug('Último dígito de la placa', { ultimoDigito });
     
     // Obtener información de la fecha
     const diaSemana = fecha.getDay(); // 0=domingo, 6=sábado
@@ -34,7 +35,7 @@ export async function puedeCircular(placa, fecha = new Date(), tipoVehiculoExent
     const dia = fecha.getDate();
     const diaEsPar = dia % 2 === 0;
     
-    logger.debug('pico-y-placa', 'Información de fecha', { 
+    console.debug('Información de fecha', { 
       diaSemana, 
       hora, 
       fechaISO, 
@@ -44,7 +45,7 @@ export async function puedeCircular(placa, fecha = new Date(), tipoVehiculoExent
 
     // Verificar si es fin de semana (sábado o domingo)
     if ([0, 6].includes(diaSemana)) {
-      logger.info('pico-y-placa', 'Es fin de semana, puede circular', { diaSemana });
+      console.log('Es fin de semana, puede circular', { diaSemana });
       return { 
         puedeCircular: true, 
         mensaje: 'Fin de semana: sin restricción', 
@@ -56,7 +57,7 @@ export async function puedeCircular(placa, fecha = new Date(), tipoVehiculoExent
     // Aquí se podría implementar una lógica más completa para festivos
     const esFestivo = fechaISO === '2023-07-20' || fechaISO === '2023-12-25';
     if (esFestivo) {
-      logger.info('pico-y-placa', 'Es festivo, puede circular', { fechaISO });
+      console.log('Es festivo, puede circular', { fechaISO });
       return { 
         puedeCircular: true, 
         mensaje: 'Día festivo: sin restricción', 
@@ -66,7 +67,7 @@ export async function puedeCircular(placa, fecha = new Date(), tipoVehiculoExent
 
     // Verificar si está fuera del horario de restricción
     if (hora < 6 || hora >= 21) {
-      logger.info('pico-y-placa', 'Fuera de horario de restricción, puede circular', { hora });
+      console.log('Fuera de horario de restricción, puede circular', { hora });
       return { 
         puedeCircular: true, 
         mensaje: 'Fuera de horario de restricción', 
@@ -76,7 +77,7 @@ export async function puedeCircular(placa, fecha = new Date(), tipoVehiculoExent
 
     // Verificar si el vehículo está exento
     if (tipoVehiculoExento) {
-      logger.info('pico-y-placa', 'Vehículo exento, puede circular', { tipoVehiculoExento });
+      console.log('Vehículo exento, puede circular', { tipoVehiculoExento });
       return { 
         puedeCircular: true, 
         mensaje: 'Vehículo exento de restricción', 
@@ -84,19 +85,20 @@ export async function puedeCircular(placa, fecha = new Date(), tipoVehiculoExent
       };
     }
 
-    // Nota: Ya no dependemos de las reglas de Directus, aplicamos directamente la lógica
-    // Registramos que estamos usando las reglas locales
-    logger.debug('pico-y-placa', 'Usando reglas locales de pico y placa', { 
-      reglasPares: ['1', '2', '3', '4', '5'],
-      reglasImpares: ['6', '7', '8', '9', '0']
-    });
+    // Obtener las reglas de pico y placa desde el endpoint
+    const reglas = await getReglasPicoYPlaca();
+    
+    // Registramos que estamos usando las reglas del endpoint
+    console.debug('Usando reglas de pico y placa del endpoint', reglas);
 
-    // Aplicar las nuevas reglas de pico y placa
-    // Si el día es par, el pico y placa aplica para placas terminadas en 1,2,3,4,5
-    // Si el día es impar, el pico y placa aplica para placas terminadas en 6,7,8,9,0
+    // Aplicar las reglas de pico y placa según el endpoint
+    // Si el día es par, el pico y placa aplica para placas terminadas en los dígitos de item2
+    // Si el día es impar, el pico y placa aplica para placas terminadas en los dígitos de item1
     
     // Definir los dígitos restringidos según si el día es par o impar
-    const digitosRestringidos = diaEsPar ? ['1', '2', '3', '4', '5'] : ['6', '7', '8', '9', '0'];
+    // Día par -> item2 -> dígitos obtenidos del endpoint
+    // Día impar -> item1 -> dígitos obtenidos del endpoint
+    const digitosRestringidos = diaEsPar ? reglas.item2 : reglas.item1;
     
     // Verificar si el último dígito está restringido
     const estaRestringido = digitosRestringidos.includes(ultimoDigito);
@@ -104,15 +106,17 @@ export async function puedeCircular(placa, fecha = new Date(), tipoVehiculoExent
     // Si está restringido, NO puede circular (pico y placa aplica)
     const puedeCircular = !estaRestringido;
     
-    // Crear un objeto de regla aplicada para mantener compatibilidad
+    // Crear un objeto de regla aplicada
+    // Días pares: dígitos restringidos de item2
+    // Días impares: dígitos restringidos de item1
     const reglaAplicada = {
-      id: diaEsPar ? 1 : 2,
+      id: diaEsPar ? 2 : 1,
       Ultimo_Digito: digitosRestringidos,
       tipo: 'Restricción'
     };
     
-    logger.debug('pico-y-placa', 'Regla aplicable', { reglaAplicada });
-    logger.info('pico-y-placa', 'Resultado de verificación', { 
+    console.debug('Regla aplicable', { reglaAplicada });
+    console.log('Resultado de verificación', { 
       puedeCircular, 
       ultimoDigito, 
       digitosRestringidos,
@@ -134,7 +138,7 @@ export async function puedeCircular(placa, fecha = new Date(), tipoVehiculoExent
       reglaAplicada: reglaAplicada 
     };
   } catch (error) {
-    logger.error('pico-y-placa', 'Error al verificar si puede circular', { 
+    console.error('Error al verificar si puede circular', { 
       message: error.message, 
       stack: error.stack 
     });
@@ -157,6 +161,8 @@ export async function puedeCircular(placa, fecha = new Date(), tipoVehiculoExent
  */
 export async function getEstadoPicoYPlaca(placa, tipoVehiculoExento = false) {
   try {
+    // Convertir la placa a mayúsculas
+    placa = placa.toUpperCase();
     const fechaActual = new Date();
     const resultado = await puedeCircular(placa, fechaActual, tipoVehiculoExento);
     
@@ -172,7 +178,7 @@ export async function getEstadoPicoYPlaca(placa, tipoVehiculoExento = false) {
       }
     };
   } catch (error) {
-    logger.error('pico-y-placa', 'Error al obtener estado de pico y placa', { 
+    console.error('Error al obtener estado de pico y placa', { 
       message: error.message, 
       stack: error.stack 
     });
@@ -198,10 +204,12 @@ export async function getEstadoPicoYPlaca(placa, tipoVehiculoExento = false) {
  * @returns {Promise<{puedeCircular: boolean, mensaje: string, reglaAplicada: object|null}>}
  */
 export async function verificarFechaFutura(placa, fecha, tipoVehiculoExento = false) {
+  // Convertir la placa a mayúsculas
+  placa = placa.toUpperCase();
   // Validar que la fecha sea futura
   const ahora = new Date();
   if (fecha < ahora) {
-    logger.warn('pico-y-placa', 'La fecha proporcionada no es futura', { 
+    console.warn('La fecha proporcionada no es futura', { 
       fechaProporcionada: fecha.toISOString(), 
       fechaActual: ahora.toISOString() 
     });

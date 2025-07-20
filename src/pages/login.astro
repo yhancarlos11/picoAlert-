@@ -3,13 +3,13 @@ import Layout from '../layout/layout.astro';
 import StatusMessage from '../components/StatusMessage.astro';
 import { hasAuthSession } from '../lib/storage.js';
 
-// Verificar si hay una sesión activa
-const isAuthenticated = hasAuthSession();
+// No redirigir automáticamente solo por sesión local
+// La redirección se hará tras login exitoso
+// const isAuthenticated = hasAuthSession();
 
-// Si el usuario ya está autenticado, redirigir al dashboard
-if (isAuthenticated) {
-    return Astro.redirect('/user/dashboard');
-}
+// if (isAuthenticated) {
+//     return Astro.redirect('/user/dashboard');
+// }
 ---
 
 <Layout title="Iniciar Sesión - PicoAlert+" description="Inicia sesión en PicoAlert+ como usuario o administrador." keywords="login, iniciar sesión, usuario, administrador, pico y placa">
@@ -75,62 +75,110 @@ if (isAuthenticated) {
             const errorText = document.getElementById('error-text');
             const successMessage = document.getElementById('success-message');
             const successText = document.getElementById('success-text');
-            const loginButton = document.getElementById('login-button');
+            const loginButton = document.getElementById('login-button') as HTMLButtonElement;
             const loginText = document.getElementById('login-text');
             const loginLoading = document.getElementById('login-loading');
             
             // Función para mostrar error
-            function showError(message) {
-                errorText.textContent = message;
-                errorMessage.classList.remove('hidden');
-                successMessage.classList.add('hidden');
+            function showError(message: string) {
+                if (errorText) errorText.textContent = message;
+                if (errorMessage) errorMessage.classList.remove('hidden');
+                if (successMessage) successMessage.classList.add('hidden');
             }
             
             // Función para mostrar éxito
-            function showSuccess(message) {
-                successText.textContent = message;
-                successMessage.classList.remove('hidden');
-                errorMessage.classList.add('hidden');
+            function showSuccess(message: string) {
+                if (successText) successText.textContent = message;
+                if (successMessage) successMessage.classList.remove('hidden');
+                if (errorMessage) errorMessage.classList.add('hidden');
             }
             
             // Función para ocultar mensajes
             function hideMessages() {
-                errorMessage.classList.add('hidden');
-                successMessage.classList.add('hidden');
+                if (errorMessage) errorMessage.classList.add('hidden');
+                if (successMessage) successMessage.classList.add('hidden');
+            }
+            
+            // Verificar si hay mensajes de error en la URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const errorParam = urlParams.get('error');
+            
+            if (errorParam) {
+                // Mapeo de códigos de error a mensajes amigables
+                // Definir los mensajes de error con tipado seguro
+                const errorMessages: Record<string, string> = {
+                    'session_expired': 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+                    'session_validation_failed': 'No se pudo validar tu sesión. Por favor, inicia sesión nuevamente.',
+                    'auth_store_not_found': 'Error en el sistema de autenticación. Por favor, inicia sesión nuevamente.',
+                    'auth_failed': 'Error de autenticación. Por favor, verifica tus credenciales.',
+                    'network_error': 'Error de conexión con el servidor. Por favor, intenta más tarde.'
+                };
+                
+                // Usar acceso seguro al objeto con verificación de existencia de clave
+                const errorMessage = errorParam && errorParam in errorMessages 
+                    ? errorMessages[errorParam] 
+                    : 'Ha ocurrido un error. Por favor, inicia sesión nuevamente.';
+                showError(errorMessage);
             }
             
             // Función para mostrar loading
-            function setLoading(loading) {
+            function setLoading(loading: boolean) {
                 if (loading) {
-                    loginText.classList.add('hidden');
-                    loginLoading.classList.remove('hidden');
-                    loginButton.disabled = true;
+                    if (loginText) loginText.classList.add('hidden');
+                    if (loginLoading) loginLoading.classList.remove('hidden');
+                    if (loginButton) loginButton.disabled = true;
                 } else {
-                    loginText.classList.remove('hidden');
-                    loginLoading.classList.add('hidden');
-                    loginButton.disabled = false;
+                    if (loginText) loginText.classList.remove('hidden');
+                    if (loginLoading) loginLoading.classList.add('hidden');
+                    if (loginButton) loginButton.disabled = false;
                 }
             }
             
             // Manejar envío del formulario
-            form.addEventListener('submit', async (e) => {
+            if (form) form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 console.log('Formulario de login enviado');
                 hideMessages();
                 setLoading(true);
                 
-                const formData = new FormData(form);
+                const formData = new FormData(form as HTMLFormElement);
                 const email = formData.get('email');
                 const password = formData.get('password');
                 console.log('Datos de login recopilados:', { email, password: '***OCULTA***' });
                 
+                // Establecer un timeout para evitar que la página se congele
+                let loginTimeout;
+                const loginPromise = new Promise(async (resolve) => {
+                    try {
+                        console.log('Obteniendo instancia de authStore');
+                        // Usar el store de autenticación
+                        const authStore = useAuthStore.getState();
+                        console.log('Llamando a authStore.login');
+                        const result = await authStore.login(email, password);
+                        console.log('Resultado de login:', result);
+                        resolve(result);
+                    } catch (error) {
+                        console.error('Error durante login:', error);
+                        resolve({ success: false, error: error instanceof Error ? error.message : 'Error inesperado durante el login' });
+                    }
+                });
+                
+                // Establecer un timeout de 20 segundos
+                loginTimeout = setTimeout(() => {
+                    console.error('Timeout durante el login');
+                    setLoading(false);
+                    showError('El proceso de login está tardando demasiado. Por favor, inténtelo de nuevo.');
+                }, 20000);
+                
+                // Definir interfaz para el resultado del login
+                interface LoginResult {
+                    success: boolean;
+                    error?: string;
+                }
+                
                 try {
-                    console.log('Obteniendo instancia de authStore');
-                    // Usar el store de autenticación
-                    const authStore = useAuthStore.getState();
-                    console.log('Llamando a authStore.login');
-                    const result = await authStore.login(email, password);
-                    console.log('Resultado de login:', result);
+                    const result = await loginPromise as LoginResult;
+                    clearTimeout(loginTimeout);
                     
                     if (result.success) {
                         console.log('Login exitoso, mostrando mensaje de éxito');
@@ -144,15 +192,20 @@ if (isAuthenticated) {
                         }, 1500);
                     } else {
                         console.error('Error en login:', result.error);
-                        showError(result.error || 'Error al iniciar sesión');
+                        showError(typeof result.error === 'string' ? result.error : 'Error al iniciar sesión');
+                        setLoading(false);
                     }
                 } catch (error) {
-                    console.error('Error durante login:', error);
-                    console.error('Detalles del error:', {
-                        mensaje: error.message,
-                        nombre: error.name,
-                        stack: error.stack
-                    });
+                    clearTimeout(loginTimeout);
+                    console.error('Error inesperado durante login:', error);
+                    setLoading(false);
+                    if (error instanceof Error) {
+                        console.error('Detalles del error:', {
+                            mensaje: error.message,
+                            nombre: error.name,
+                            stack: error.stack
+                        });
+                    }
                     showError('Error de conexión. Por favor, intenta de nuevo.');
                 } finally {
                     console.log('Finalizando proceso de login');
@@ -160,11 +213,12 @@ if (isAuthenticated) {
                 }
             });
             
-            // Verificar si ya está autenticado
-            const authStore = useAuthStore.getState();
-            if (authStore.isAuthenticated) {
-                window.location.href = '/user/dashboard';
-            }
+            // No redirigir automáticamente al cargar la página
+            // La redirección se hará tras login exitoso
+            // const authStore = useAuthStore.getState();
+            // if (authStore.isAuthenticated) {
+            //     window.location.href = '/user/dashboard';
+            // }
         });
     </script>
 </Layout>

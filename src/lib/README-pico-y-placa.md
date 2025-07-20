@@ -52,13 +52,13 @@ Verifica si un vehículo puede circular en una fecha futura.
 
 ## Reglas de Pico y Placa
 
-Las reglas de pico y placa están definidas directamente en el código y funcionan de la siguiente manera:
+Las reglas de pico y placa se obtienen dinámicamente desde un endpoint y funcionan de la siguiente manera:
 
-1. Si el día actual es par (2, 4, 6, etc.), el pico y placa aplica para las placas terminadas en: 1, 2, 3, 4, 5
-2. Si el día actual es impar (1, 3, 5, etc.), el pico y placa aplica para las placas terminadas en: 6, 7, 8, 9, 0
-3. Si el día actual es sábado o domingo, no aplica el pico y placa (todos los vehículos pueden circular)
+1. Si el día actual es par (2, 4, 6, etc.), el pico y placa aplica para las placas terminadas en los dígitos definidos en el endpoint (ID 2).
+2. Si el día actual es impar (1, 3, 5, etc.), el pico y placa aplica para las placas terminadas en los dígitos definidos en el endpoint (ID 1).
+3. Si el día actual es sábado o domingo, no aplica el pico y placa (todos los vehículos pueden circular).
 
-Estas reglas están implementadas directamente en la función `puedeCircular` del archivo `pico-y-placa.js`.
+Estas reglas están implementadas en la función `puedeCircular` del archivo `pico-y-placa.js`, que obtiene los dígitos restringidos desde el endpoint utilizando la función `getReglasPicoYPlaca` del archivo `api.js`.
 
 ## Ejemplo de uso
 
@@ -117,9 +117,9 @@ console.log(estado);
 
 ## Notas importantes
 
-- Las reglas están definidas directamente en el código, por lo que no dependen de una fuente externa como Directus.
+- Las reglas se obtienen dinámicamente desde un endpoint, lo que permite actualizar las restricciones sin necesidad de modificar el código.
 - El algoritmo verifica primero si es fin de semana, festivo, fuera de horario o si el vehículo está exento antes de aplicar las reglas.
-- Si el día es par, se restringe la circulación de vehículos con placas terminadas en 1, 2, 3, 4, 5.
-- Si el día es impar, se restringe la circulación de vehículos con placas terminadas en 6, 7, 8, 9, 0.
+- Si el día es par, se restringe la circulación de vehículos con placas terminadas en los dígitos definidos en el endpoint (ID 2).
+- Si el día es impar, se restringe la circulación de vehículos con placas terminadas en los dígitos definidos en el endpoint (ID 1).
 - Los sábados y domingos no hay restricción de circulación.
 - Se registran logs detallados de todo el proceso para facilitar la depuración.

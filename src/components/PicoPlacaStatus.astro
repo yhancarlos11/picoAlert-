@@ -29,7 +29,9 @@ let estadoPicoYPlaca = {
 
 try {
   if (placa && placa.length >= 5) {
-    estadoPicoYPlaca = await getEstadoPicoYPlaca(placa, tipoVehiculoExento);
+    // Convertir la placa a mayúsculas antes de procesarla
+    const placaUpperCase = placa.toUpperCase();
+    estadoPicoYPlaca = await getEstadoPicoYPlaca(placaUpperCase, tipoVehiculoExento);
   } else {
     estadoPicoYPlaca = {
       estado: 'ERROR',
@@ -111,9 +113,17 @@ switch (estadoPicoYPlaca.color) {
         {estadoPicoYPlaca.detalles.reglaAplicada && (
           <div class="mt-2">
             <p><strong>Regla aplicada:</strong></p>
-            <pre class="mt-1 text-xs p-2 bg-gray-50 dark:bg-gray-800 rounded overflow-x-auto">
-              {JSON.stringify(estadoPicoYPlaca.detalles.reglaAplicada, null, 2)}
-            </pre>
+            <div class="mt-1 p-3 bg-gray-50 dark:bg-gray-800 rounded">
+              <p class="text-sm mb-2">
+                <span class="font-medium">Tipo de restricción:</span> {estadoPicoYPlaca.detalles.reglaAplicada.tipo}
+              </p>
+              <p class="text-sm mb-2">
+                <span class="font-medium">Dígitos restringidos:</span> {estadoPicoYPlaca.detalles.reglaAplicada.Ultimo_Digito.join(', ')}
+              </p>
+              <p class="text-sm">
+                <span class="font-medium">Aplicable en:</span> {estadoPicoYPlaca.detalles.reglaAplicada.id === 1 ? 'Días impares' : 'Días pares'}
+              </p>
+            </div>
           </div>
         )}
       </div>
