@@ -1,0 +1,224 @@
+---
+import Layout from '../layout/layout.astro';
+import StatusMessage from '../components/StatusMessage.astro';
+import { hasAuthSession } from '../lib/storage.js';
+
+// No redirigir automáticamente solo por sesión local
+// La redirección se hará tras login exitoso
+// const isAuthenticated = hasAuthSession();
+
+// if (isAuthenticated) {
+//     return Astro.redirect('/user/dashboard');
+// }
+---
+
+<Layout title="Iniciar Sesión - PicoAlert+" description="Inicia sesión en PicoAlert+ como usuario o administrador." keywords="login, iniciar sesión, usuario, administrador, pico y placa">
+    <section class="bg-white dark:bg-gray-900">
+        <div class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
+            <div class="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
+                <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
+                    <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
+                        Iniciar Sesión en PicoAlert+
+                    </h1>
+                    
+                    <!-- Mensajes de estado utilizando el componente StatusMessage -->
+                    <StatusMessage />
+                    
+                    <form id="login-form" class="space-y-4 md:space-y-6">
+                        <div>
+                            <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Email</label>
+                            <input type="email" name="email" id="email" class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" placeholder="tu@email.com" required>
+                        </div>
+                        <div>
+                            <label for="password" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contraseña</label>
+                            <input type="password" name="password" id="password" placeholder="••••••••" class="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" required>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-start">
+                                <div class="flex items-center h-5">
+                                    <input id="remember" aria-describedby="remember" type="checkbox" class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800">
+                                </div>
+                                <div class="ml-3 text-sm">
+                                    <label for="remember" class="text-gray-500 dark:text-gray-300">Recordarme</label>
+                                </div>
+                            </div>
+                            <a href="#" class="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500">¿Olvidaste tu contraseña?</a>
+                        </div>
+                        
+                        <button type="submit" id="login-button" class="w-full text-white bg-secondary-500 hover:bg-secondary-600 focus:ring-4 focus:outline-none focus:ring-secondary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-secondary-600 dark:hover:bg-secondary-700 dark:focus:ring-secondary-800 shadow-md cursor-pointer">
+                            <span id="login-text">Iniciar Sesión</span>
+                            <span id="login-loading" class="hidden">
+                                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Iniciando sesión...
+                            </span>
+                        </button>
+                        
+                        <p class="text-sm font-light text-gray-500 dark:text-gray-400">
+                            ¿No tienes una cuenta? <a href="/register-user" class="font-medium text-primary-600 hover:underline dark:text-primary-500">Regístrate aquí</a>
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        import { useAuthStore } from '../lib/auth-store.js';
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('login-form');
+            const errorMessage = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+            const successMessage = document.getElementById('success-message');
+            const successText = document.getElementById('success-text');
+            const loginButton = document.getElementById('login-button') as HTMLButtonElement;
+            const loginText = document.getElementById('login-text');
+            const loginLoading = document.getElementById('login-loading');
+            
+            // Función para mostrar error
+            function showError(message: string) {
+                if (errorText) errorText.textContent = message;
+                if (errorMessage) errorMessage.classList.remove('hidden');
+                if (successMessage) successMessage.classList.add('hidden');
+            }
+            
+            // Función para mostrar éxito
+            function showSuccess(message: string) {
+                if (successText) successText.textContent = message;
+                if (successMessage) successMessage.classList.remove('hidden');
+                if (errorMessage) errorMessage.classList.add('hidden');
+            }
+            
+            // Función para ocultar mensajes
+            function hideMessages() {
+                if (errorMessage) errorMessage.classList.add('hidden');
+                if (successMessage) successMessage.classList.add('hidden');
+            }
+            
+            // Verificar si hay mensajes de error en la URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const errorParam = urlParams.get('error');
+            
+            if (errorParam) {
+                // Mapeo de códigos de error a mensajes amigables
+                // Definir los mensajes de error con tipado seguro
+                const errorMessages: Record<string, string> = {
+                    'session_expired': 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.',
+                    'session_validation_failed': 'No se pudo validar tu sesión. Por favor, inicia sesión nuevamente.',
+                    'auth_store_not_found': 'Error en el sistema de autenticación. Por favor, inicia sesión nuevamente.',
+                    'auth_failed': 'Error de autenticación. Por favor, verifica tus credenciales.',
+                    'network_error': 'Error de conexión con el servidor. Por favor, intenta más tarde.'
+                };
+                
+                // Usar acceso seguro al objeto con verificación de existencia de clave
+                const errorMessage = errorParam && errorParam in errorMessages 
+                    ? errorMessages[errorParam] 
+                    : 'Ha ocurrido un error. Por favor, inicia sesión nuevamente.';
+                showError(errorMessage);
+            }
+            
+            // Función para mostrar loading
+            function setLoading(loading: boolean) {
+                if (loading) {
+                    if (loginText) loginText.classList.add('hidden');
+                    if (loginLoading) loginLoading.classList.remove('hidden');
+                    if (loginButton) loginButton.disabled = true;
+                } else {
+                    if (loginText) loginText.classList.remove('hidden');
+                    if (loginLoading) loginLoading.classList.add('hidden');
+                    if (loginButton) loginButton.disabled = false;
+                }
+            }
+            
+            // Manejar envío del formulario
+            if (form) form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                console.log('Formulario de login enviado');
+                hideMessages();
+                setLoading(true);
+                
+                const formData = new FormData(form as HTMLFormElement);
+                const email = formData.get('email');
+                const password = formData.get('password');
+                console.log('Datos de login recopilados:', { email, password: '***OCULTA***' });
+                
+                // Establecer un timeout para evitar que la página se congele
+                let loginTimeout;
+                const loginPromise = new Promise(async (resolve) => {
+                    try {
+                        console.log('Obteniendo instancia de authStore');
+                        // Usar el store de autenticación
+                        const authStore = useAuthStore.getState();
+                        console.log('Llamando a authStore.login');
+                        const result = await authStore.login(email, password);
+                        console.log('Resultado de login:', result);
+                        resolve(result);
+                    } catch (error) {
+                        console.error('Error durante login:', error);
+                        resolve({ success: false, error: error instanceof Error ? error.message : 'Error inesperado durante el login' });
+                    }
+                });
+                
+                // Establecer un timeout de 20 segundos
+                loginTimeout = setTimeout(() => {
+                    console.error('Timeout durante el login');
+                    setLoading(false);
+                    showError('El proceso de login está tardando demasiado. Por favor, inténtelo de nuevo.');
+                }, 20000);
+                
+                // Definir interfaz para el resultado del login
+                interface LoginResult {
+                    success: boolean;
+                    error?: string;
+                }
+                
+                try {
+                    const result = await loginPromise as LoginResult;
+                    clearTimeout(loginTimeout);
+                    
+                    if (result.success) {
+                        console.log('Login exitoso, mostrando mensaje de éxito');
+                        showSuccess('Inicio de sesión exitoso. Redirigiendo...');
+                        
+                        // Redirigir después de un breve delay
+                        console.log('Configurando redirección a dashboard');
+                        setTimeout(() => {
+                            console.log('Redirigiendo a dashboard');
+                            window.location.href = '/user/dashboard';
+                        }, 1500);
+                    } else {
+                        console.error('Error en login:', result.error);
+                        showError(typeof result.error === 'string' ? result.error : 'Error al iniciar sesión');
+                        setLoading(false);
+                    }
+                } catch (error) {
+                    clearTimeout(loginTimeout);
+                    console.error('Error inesperado durante login:', error);
+                    setLoading(false);
+                    if (error instanceof Error) {
+                        console.error('Detalles del error:', {
+                            mensaje: error.message,
+                            nombre: error.name,
+                            stack: error.stack
+                        });
+                    }
+                    showError('Error de conexión. Por favor, intenta de nuevo.');
+                } finally {
+                    console.log('Finalizando proceso de login');
+                    setLoading(false);
+                }
+            });
+            
+            // No redirigir automáticamente al cargar la página
+            // La redirección se hará tras login exitoso
+            // const authStore = useAuthStore.getState();
+            // if (authStore.isAuthenticated) {
+            //     window.location.href = '/user/dashboard';
+            // }
+        });
+    </script>
+</Layout>

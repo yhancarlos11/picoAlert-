@@ -1,0 +1,21 @@
+---
+import AdminLayout from '../../../layout/admin.astro';
+import { getUser } from '../../../lib/api.js';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+const user = await getUser(id);
+---
+
+<AdminLayout>
+    <section class="bg-white dark:bg-gray-900">
+        <div class="py-8 px-4 mx-auto max-w-screen-xl lg:py-16">
+            <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-md dark:bg-gray-800 dark:border-gray-700">
+                <h2 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{user.Nombre}</h2>
+                <p class="mb-3 font-normal text-gray-700 dark:text-gray-400"><strong>Email:</strong> {user.Correo}</p>
+                <p class="mb-3 font-normal text-gray-700 dark:text-gray-400"><strong>Teléfono:</strong> {user.Telefono}</p>
+            </div>
+        </div>
+    </section>
+</AdminLayout>
