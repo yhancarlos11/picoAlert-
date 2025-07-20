@@ -1,0 +1,26 @@
+---
+import UserLayout from '../../layout/user.astro';
+import { getVehiculos } from '../../lib/api.js';
+
+const vehiculos = await getVehiculos();
+---
+
+<UserLayout>
+    <section class="bg-white dark:bg-gray-900">
+        <div class="py-8 px-4 mx-auto max-w-screen-xl lg:py-16">
+            <h2 class="mb-4 text-4xl tracking-tight font-extrabold leading-tight text-gray-900 dark:text-white">Mis Vehículos</h2>
+            <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                {vehiculos.length > 0 ? (
+                    vehiculos.map(vehiculo => (
+                        <div class="p-6 bg-white rounded-lg border border-gray-200 shadow-md dark:bg-gray-800 dark:border-gray-700">
+                            <h3 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Placa: {vehiculo.Placa?.toUpperCase()}</h3>
+                            <p class="mb-3 font-normal text-gray-700 dark:text-gray-400">Tipo: {vehiculo.Tipo ? vehiculo.Tipo.replace('_', ' ') : 'No especificado'}</p>
+                        </div>
+                    ))
+                ) : (
+                    <p class="text-gray-500 dark:text-gray-400">No tienes vehículos registrados aún.</p>
+                )}
+            </div>
+        </div>
+    </section>
+</UserLayout>

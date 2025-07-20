@@ -1,0 +1,1 @@
+import{u as o}from"./auth-store.DtDsWl_t.js";import"./api.BoHFqtEf.js";document.addEventListener("DOMContentLoaded",()=>{document.querySelectorAll("#navbar-logout-btn, #sidebar-logout-btn").forEach(t=>{t.addEventListener("click",async()=>{await o.getState().logout(),window.location.href="/login"})})});

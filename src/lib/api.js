@@ -438,3 +438,62 @@ export async function isAuthenticated(refreshToken = null) {
     return { isAuthenticated: null, tokenRefreshed: false }; // Retornamos null para indicar que no pudimos verificar
   }
 }
+
+/**
+ * Obtiene todos los usuarios registrados
+ * @returns {Promise<Array>} Lista de usuarios
+ */
+export async function getUsers() {
+  try {
+    // Obtener todos los usuarios desde Directus
+    const users = await directus.request(readItems('directus_users', {
+      fields: ['id', 'first_name', 'email']
+    }));
+    
+    // Mapear los campos de Directus a los nombres de campo utilizados en la aplicación
+    return users.map(user => ({
+      id: user.id,
+      Nombre: user.first_name || 'Sin nombre',
+      Correo: user.email
+    }));
+  } catch (error) {
+    console.error('Error al obtener usuarios:', error);
+    return [];
+  }
+}
+
+/**
+ * Obtiene un usuario específico por su ID
+ * @param {string} id - ID del usuario a obtener
+ * @returns {Promise<Object>} Datos del usuario
+ */
+export async function getUser(id) {
+  try {
+    // Obtener un usuario específico desde Directus
+    const user = await directus.request(readItems('directus_users', {
+      fields: ['id', 'first_name', 'email', 'phone'],
+      filter: { id: { _eq: id } }
+    }));
+    
+    if (!user || user.length === 0) {
+      throw new Error('Usuario no encontrado');
+    }
+    
+    // Mapear los campos de Directus a los nombres de campo utilizados en la aplicación
+    return {
+      id: user[0].id,
+      Nombre: user[0].first_name || 'Sin nombre',
+      Correo: user[0].email,
+      Telefono: user[0].phone || 'No disponible'
+    };
+  } catch (error) {
+    console.error(`Error al obtener usuario con ID ${id}:`, error);
+    // Devolver un objeto con valores por defecto en caso de error
+    return {
+      id: id,
+      Nombre: 'Error al cargar',
+      Correo: 'No disponible',
+      Telefono: 'No disponible'
+    };
+  }
+}
