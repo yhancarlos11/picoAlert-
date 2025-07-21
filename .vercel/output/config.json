@@ -2,9 +2,6 @@
 	"version": 3,
 	"routes": [
 		{
-			"handle": "filesystem"
-		},
-		{
 			"src": "^/_astro/(.*)$",
 			"headers": {
 				"cache-control": "public, max-age=31536000, immutable"
@@ -12,87 +9,90 @@
 			"continue": true
 		},
 		{
-			"src": "^/_server-islands/([^/]+?)/?$",
+			"handle": "filesystem"
+		},
+		{
+			"src": "^\\/_server-islands\\/([^/]+?)\\/?$",
 			"dest": "_render"
 		},
 		{
-			"src": "^/_image/?$",
+			"src": "^\\/_image\\/?$",
 			"dest": "_render"
 		},
 		{
-			"src": "^/admin/pico-y-placa-rules/?$",
+			"src": "^\\/admin\\/pico-y-placa-rules\\/?$",
 			"dest": "_render"
 		},
 		{
-			"src": "^/admin/user/([^/]+?)/?$",
+			"src": "^\\/admin\\/user\\/([^/]+?)\\/?$",
 			"dest": "_render"
 		},
 		{
-			"src": "^/admin/users/?$",
+			"src": "^\\/admin\\/users\\/?$",
 			"dest": "_render"
 		},
 		{
-			"src": "^/api/pico-y-placa/?$",
+			"src": "^\\/api\\/pico-y-placa\\/?$",
 			"dest": "_render"
 		},
 		{
-			"src": "^/api/register/?$",
+			"src": "^\\/api\\/register\\/?$",
 			"dest": "_render"
 		},
 		{
-			"src": "^/faq/?$",
+			"src": "^\\/faq\\/?$",
 			"dest": "_render"
 		},
 		{
-			"src": "^/login/?$",
+			"src": "^\\/login\\/?$",
 			"dest": "_render"
 		},
 		{
-			"src": "^/pico-y-placa/?$",
+			"src": "^\\/pico-y-placa\\/?$",
 			"dest": "_render"
 		},
 		{
-			"src": "^/register-user/?$",
+			"src": "^\\/register-user\\/?$",
 			"dest": "_render"
 		},
 		{
-			"src": "^/terms-and-conditions/?$",
+			"src": "^\\/terms-and-conditions\\/?$",
 			"dest": "_render"
 		},
 		{
-			"src": "^/user/calendar/?$",
+			"src": "^\\/user\\/calendar\\/?$",
 			"dest": "_render"
 		},
 		{
-			"src": "^/user/dashboard/?$",
+			"src": "^\\/user\\/dashboard\\/?$",
 			"dest": "_render"
 		},
 		{
-			"src": "^/user/movility-suggestion/?$",
+			"src": "^\\/user\\/movility-suggestion\\/?$",
 			"dest": "_render"
 		},
 		{
-			"src": "^/user/notifications/?$",
+			"src": "^\\/user\\/notifications\\/?$",
 			"dest": "_render"
 		},
 		{
-			"src": "^/user/pico-y-placa/?$",
+			"src": "^\\/user\\/pico-y-placa\\/?$",
 			"dest": "_render"
 		},
 		{
-			"src": "^/user/pico-y-placa-details/?$",
+			"src": "^\\/user\\/pico-y-placa-details\\/?$",
 			"dest": "_render"
 		},
 		{
-			"src": "^/user/register-vehicle/?$",
+			"src": "^\\/user\\/register-vehicle\\/?$",
 			"dest": "_render"
 		},
 		{
-			"src": "^/user/vehicles/?$",
+			"src": "^\\/user\\/vehicles\\/?$",
 			"dest": "_render"
 		},
 		{
-			"src": "^/$",
+			"src": "^\\/$",
 			"dest": "_render"
 		}
 	]
