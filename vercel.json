@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": ".vercel/output/static"
+      }
+    },
+    {
+      "src": ".vercel/output/functions/_render.func/dist/server/entry.mjs",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/.vercel/output/functions/_render.func"
+    }
+  ],
+  "env": {
+    "NODE_VERSION": "18.x"
+  }
+}
