@@ -3,15 +3,13 @@ import vercel from '@astrojs/vercel/serverless'; // Importa el adaptador de Verc
 import svelte from "@astrojs/svelte";
 import tailwind from "@astrojs/tailwind";
 
+import node from '@astrojs/node';
+
 // https://astro.build/config
 export default defineConfig({
   output: 'server',
-  adapter: vercel({
-    // Asegúrate de que se generen correctamente los archivos del servidor
-    includeFiles: ['./dist/server/entry.mjs'],
-    // Configuración adicional para el adaptador de Vercel
-    functionPerRoute: false, // Usa una sola función para todas las rutas
-    maxDuration: 60 // Aumenta el tiempo máximo de ejecución (en segundos)
+  adapter: node({
+    mode: 'standalone'
   }), // Usa el adaptador de Vercel
   integrations: [svelte(), tailwind()]
 });
