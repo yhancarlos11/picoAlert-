@@ -3,8 +3,6 @@ import vercel from '@astrojs/vercel/serverless'; // Importa el adaptador de Verc
 import svelte from "@astrojs/svelte";
 import tailwind from "@astrojs/tailwind";
 
-import node from '@astrojs/node';
-
 // https://astro.build/config
 export default defineConfig({
   output: 'server',
