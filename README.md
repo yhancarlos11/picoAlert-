@@ -16,13 +16,104 @@ PicoAlert+ es una aplicación web diseñada para ayudar a los conductores a mant
 
 La aplicación implementa las siguientes reglas para determinar si un vehículo puede circular:
 
+### Reglas Principales
 1. **Días Pares**: Si el día del mes es par (2, 4, 6, etc.), el pico y placa aplica para las placas terminadas en los dígitos definidos en el endpoint (ID 2).
 2. **Días Impares**: Si el día del mes es impar (1, 3, 5, etc.), el pico y placa aplica para las placas terminadas en los dígitos definidos en el endpoint (ID 1).
 3. **Fines de Semana**: Los sábados y domingos no hay restricción de circulación.
 4. **Horario de Restricción**: Las restricciones aplican de 6:00 AM a 9:00 PM en días hábiles.
 5. **Vehículos Exentos**: Algunos vehículos pueden estar exentos de las restricciones (servicios públicos, emergencias, etc.).
+6. **Días Festivos**: No hay restricción en días festivos (ej: 20 de julio, 25 de diciembre).
 
-Las reglas específicas de los dígitos restringidos se obtienen dinámicamente desde un endpoint, lo que permite actualizar las restricciones sin necesidad de modificar el código.
+### Lógica de Aplicación
+- **Validación de Placa**: Debe tener al menos 5 caracteres
+- **Último Dígito**: Se evalúa el último dígito de la placa
+- **Días Pares/Impares**: Se determina según el día del mes (no día de la semana)
+- **Horario**: Restricción activa entre 6:00 AM y 9:00 PM
+- **Excepciones**: Fines de semana, festivos y vehículos exentos pueden circular libremente
+
+Las reglas específicas de los dígitos restringidos se obtienen dinámicamente desde un endpoint externo, lo que permite actualizar las restricciones sin necesidad de modificar el código.
+
+## 🌐 Estructura de APIs
+
+La aplicación expone los siguientes endpoints REST para interactuar con el sistema:
+
+### POST `/api/pico-y-placa`
+Verifica el estado de pico y placa para una placa específica.
+
+**Request Body:**
+```json
+{
+  "placa": "ABC123",
+  "tipoVehiculoExento": false
+}
+```
+
+**Response (Éxito):**
+```json
+{
+  "estado": "PERMITIDO|RESTRINGIDO|ERROR",
+  "color": "green|red|yellow",
+  "mensaje": "Descripción del estado",
+  "detalles": {
+    "placa": "ABC123",
+    "fecha": "2023-12-01T10:30:00.000Z",
+    "tipoVehiculoExento": false,
+    "reglaAplicada": {
+      "id": 1,
+      "Ultimo_Digito": ["1", "2"],
+      "tipo": "Restricción"
+    }
+  }
+}
+```
+
+**Códigos de Estado:**
+- `200`: Verificación exitosa
+- `400`: Placa inválida o datos incorrectos
+- `500`: Error interno del servidor
+
+### POST `/api/register`
+Registra un nuevo usuario en el sistema.
+
+**Request Body:**
+```json
+{
+  "email": "usuario@ejemplo.com",
+  "password": "contraseña123",
+  "first_name": "Nombre"
+}
+```
+
+**Response (Éxito):**
+```json
+{
+  "success": true,
+  "message": "Usuario creado exitosamente",
+  "data": {
+    "id": "uuid",
+    "email": "usuario@ejemplo.com",
+    "first_name": "Nombre"
+  }
+}
+```
+
+**Response (Error):**
+```json
+{
+  "success": false,
+  "error": "Descripción del error"
+}
+```
+
+**Validaciones:**
+- Email debe tener formato válido
+- Contraseña mínimo 6 caracteres
+- Email y contraseña son obligatorios
+
+**Códigos de Estado:**
+- `201`: Usuario creado exitosamente
+- `400`: Datos inválidos o usuario ya existe
+- `500`: Error interno del servidor
 
 ## 💻 Tecnologías Utilizadas
 
@@ -67,17 +158,36 @@ Para desplegar este proyecto en Vercel, sigue estos pasos:
 ```
 /
 ├── public/              # Archivos estáticos (imágenes, estilos globales)
+│   ├── logo/           # Logo de la aplicación
+│   └── img_tipo_vehiculo/  # Imágenes de tipos de vehículos
 ├── src/
 │   ├── components/      # Componentes reutilizables
 │   │   ├── PicoPlacaStatus.astro  # Componente para mostrar estado de Pico y Placa
+│   │   ├── Sidebar.astro          # Barra lateral de navegación
+│   │   ├── ThemeSwitcher.svelte   # Componente para cambiar tema
 │   │   └── ...
 │   ├── layout/          # Layouts de la aplicación
+│   │   ├── base.astro   # Layout base
+│   │   ├── user.astro   # Layout para usuarios autenticados
+│   │   └── ...
 │   ├── lib/             # Lógica de negocio y utilidades
 │   │   ├── pico-y-placa.js  # Implementación de reglas de Pico y Placa
+│   │   ├── api.js           # Funciones para comunicación con APIs externas
+│   │   ├── auth-store.js    # Manejo de autenticación
 │   │   └── ...
 │   ├── pages/           # Páginas de la aplicación
+│   │   ├── api/         # Endpoints de la API REST
+│   │   │   ├── pico-y-placa.js  # API para verificar estado de Pico y Placa
+│   │   │   └── register.js      # API para registro de usuarios
 │   │   ├── user/        # Páginas para usuarios registrados
-│   │   │   └── calendar.astro  # Calendario interactivo de Pico y Placa
+│   │   │   ├── dashboard.astro       # Panel principal del usuario
+│   │   │   ├── vehicles.astro        # Gestión de vehículos
+│   │   │   ├── vehicle-details/      # Detalles de vehículos
+│   │   │   │   └── [id].astro        # Página dinámica de detalles
+│   │   │   ├── calendar.astro        # Calendario interactivo de Pico y Placa
+│   │   │   └── ...
+│   │   ├── index.astro       # Página principal
+│   │   ├── login.astro       # Página de inicio de sesión
 │   │   └── ...
 │   └── styles/          # Estilos adicionales
 └── package.json         # Dependencias y scripts
