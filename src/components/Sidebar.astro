@@ -1,15 +1,42 @@
 ---
 import { Icons } from '../lib/icons.js';
 import LogoutButton from './LogoutButton.astro';
+import ThemeSwitcher from './ThemeSwitcher.svelte';
 
-const { title, links } = Astro.props;
+interface SidebarLink {
+  href: string;
+  text: string;
+  icon: keyof typeof Icons;
+}
+
+interface Props {
+  title: string;
+  links: SidebarLink[];
+}
+
+const { title, links } = Astro.props as Props;
 ---
 
 <aside class="w-64 bg-white text-gray-800 p-4 dark:bg-gray-800 dark:text-white fixed h-full hidden md:block">
-	<h2 class="text-2xl font-bold mb-6 text-primary-500 dark:text-primary-300">{title}</h2>
+	<!-- Logo y nombre de la aplicación -->
+	<div class="flex items-center mb-6">
+		<img src="/logo/logo.png" class="h-8 mr-2" alt="Picolalert Logo" />
+		<span class="text-xl font-semibold text-primary-500 dark:text-white">Picolalert</span>
+	</div>
+
+	<!-- Botón de cambio de tema en la parte superior -->
+	<div class="mb-6 flex items-center justify-between bg-gray-100 dark:bg-gray-700 p-2 rounded">
+		<div class="flex items-center">
+			<Fragment set:html={Icons.Theme} />
+			<span class="ml-2">Tema</span>
+		</div>
+		<ThemeSwitcher client:load />
+	</div>
+
+	<h2 class="text-lg font-bold mb-4 text-primary-500 dark:text-primary-300">{title}</h2>
 	<nav>
 		<ul>
-			{links.map(link => (
+			{links.map((link: SidebarLink) => (
 				<li class="mb-2">
 					<a href={link.href} class="flex items-center hover:bg-primary-50 dark:hover:bg-gray-700 p-2 rounded text-gray-700 hover:text-primary-500 dark:text-gray-300 dark:hover:text-primary-300">
 						<Fragment set:html={Icons[link.icon]} />

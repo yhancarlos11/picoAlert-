@@ -42,18 +42,30 @@ import StatusMessage from "../../components/StatusMessage.astro";
                         <label for="tipo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
                             Tipo de Vehículo *
                         </label>
-                        <select id="tipo" 
-                                name="tipo" 
-                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" 
-                                required>
-                            <option value="">Selecciona el tipo</option>
-                            <option value="Carro_mono_plaza">Carro Monoplaza</option>
-                            <option value="Carro_familiar">Carro Familiar</option>
-                            <option value="Moto">Moto</option>
-                            <option value="Camioneta">Camioneta</option>
-                            <option value="Camion">Camión</option>
-                            <option value="Otro">Otro</option>
-                        </select>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <select id="tipo" 
+                                        name="tipo" 
+                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" 
+                                        required>
+                                    <option value="">Selecciona el tipo</option>
+                                    <option value="Automovil">Automóvil</option>
+                                    <option value="Motocarro">Motocarro</option>
+                                    <option value="Cuatrimoto">Cuatrimoto</option>
+                                    <option value="Campero">Campero</option>
+                                    <option value="Camioneta">Camioneta</option>
+                                    <option value="Microbus">Microbús</option>
+                                </select>
+                            </div>
+                            <div class="flex justify-center items-center">
+                                <img 
+                                    id="vehicle-type-preview" 
+                                    src="/img_tipo_vehiculo/automovil.jpg" 
+                                    alt="Vista previa del tipo de vehículo"
+                                    class="w-24 h-24 object-cover rounded-lg shadow-sm"
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -81,6 +93,15 @@ import StatusMessage from "../../components/StatusMessage.astro";
     <script>
         import { useAuthStore } from '../../lib/auth-store.js';
         import { createVehiculo, isAuthenticated } from '../../lib/api.js';
+        
+        // Declare global functions from StatusMessage component
+        declare global {
+            interface Window {
+                showSuccessMessage: (message: string) => void;
+                showErrorMessage: (message: string) => void;
+                hideMessages: () => void;
+            }
+        }
         
         document.addEventListener('DOMContentLoaded', async () => {
             const authStore = useAuthStore.getState();
@@ -117,6 +138,33 @@ import StatusMessage from "../../components/StatusMessage.astro";
                 placaInput.addEventListener('input', function(e) {
                     const target = e.target as HTMLInputElement;
                     target.value = target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                });
+            }
+            
+            // Actualizar la imagen de vista previa cuando cambia el tipo de vehículo
+            const tipoSelect = document.getElementById('tipo');
+            const vehiclePreview = document.getElementById('vehicle-type-preview');
+            
+            if (tipoSelect && vehiclePreview) {
+                tipoSelect.addEventListener('change', function(e) {
+                    const target = e.target as HTMLSelectElement;
+                    const selectedType = target.value;
+                    
+                    if (selectedType) {
+                        // Actualizar la imagen según el tipo seleccionado
+                        const imgPath = `/img_tipo_vehiculo/${selectedType === 'Automovil' ? 'automovil' : selectedType}.jpg`;
+                        vehiclePreview.setAttribute('src', imgPath);
+                        vehiclePreview.setAttribute('alt', `Vista previa de ${selectedType}`);
+                        
+                        // Configurar manejo de errores para la imagen
+                        vehiclePreview.onerror = function() {
+                            vehiclePreview.setAttribute('src', '/img_tipo_vehiculo/automovil.jpg');
+                            vehiclePreview.onerror = null;
+                        };
+                    } else {
+                        // Si no hay tipo seleccionado, mostrar imagen por defecto
+                        vehiclePreview.setAttribute('src', '/img_tipo_vehiculo/automovil.jpg');
+                    }
                 });
             }
             
@@ -167,18 +215,19 @@ import StatusMessage from "../../components/StatusMessage.astro";
                     }
                     
                     // Limpiar formulario
-                    form.reset();
+                    (form as HTMLFormElement).reset();
                     
                     // Redirigir después de 2 segundos
                     setTimeout(() => {
                         window.location.href = '/user/dashboard';
                     }, 2000);
                     
-                } catch (error) {
+                } catch (error: unknown) {
                     console.error('Error registering vehicle:', error);
                     
                     // Verificar si el error está relacionado con la autenticación
-                    if (error.message && (error.message.includes('sesión') || error.message.includes('autenticación') || error.message.includes('token'))) {
+                    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+                    if (errorMessage && (errorMessage.includes('sesión') || errorMessage.includes('autenticación') || errorMessage.includes('token'))) {
                         // Mostrar un mensaje más específico
                         window.showErrorMessage('Tu sesión ha expirado. Serás redirigido para iniciar sesión nuevamente.');
                         
@@ -191,7 +240,7 @@ import StatusMessage from "../../components/StatusMessage.astro";
                         }, 2000);
                     } else {
                         // Para otros errores, mostrar el mensaje normal
-                        window.showErrorMessage(error.message || 'Error al registrar el vehículo. Por favor, intenta de nuevo.');
+                        window.showErrorMessage(error instanceof Error ? error.message : 'Error al registrar el vehículo. Por favor, intenta de nuevo.');
                     }
                 } finally {
                     // Restaurar estado del botón

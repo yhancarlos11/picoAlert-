@@ -22,6 +22,10 @@
 		{
 			"src": "^\\/admin\\/user\\/([^/]+?)\\/?$",
 			"dest": "_render"
+		},
+		{
+			"src": "^\\/user\\/vehicle-details\\/([^/]+?)\\/?$",
+			"dest": "_render"
 		}
 	]
 }

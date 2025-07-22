@@ -84,7 +84,7 @@ export async function getVehiculos() {
 
 /**
  * Obtiene las reglas de pico y placa desde el endpoint
- * @returns {Promise<Object>} Objeto con las reglas de pico y placa
+ * @returns {Promise<{item1: string[], item2: string[]}>} Objeto con las reglas de pico y placa
  */
 export async function getReglasPicoYPlaca() {
   try {
@@ -200,11 +200,48 @@ export async function createVehiculo(placa, tipo) {
   try {
     console.log('Creando vehículo en Directus:', { placa, tipo });
     
+    // Obtener el usuario activo del store si estamos en el navegador
+    let usuarioId = null;
+    if (typeof window !== 'undefined') {
+      try {
+        // Importar dinámicamente para evitar errores en SSR
+        const { useAuthStore } = await import('./auth-store.js');
+        const authStore = useAuthStore.getState();
+        
+        // Intentar obtener el ID del usuario del store
+        usuarioId = authStore.user?.id || null;
+        console.log('ID de usuario del store:', usuarioId);
+        
+        // Si no tenemos ID del usuario en el store, intentar obtenerlo desde Directus
+        if (!usuarioId && authStore.token) {
+          try {
+            console.log('Intentando obtener usuario desde Directus');
+            // Obtener el usuario actual desde Directus usando el endpoint /users/me
+            const userResponse = await directus.request(() => ({
+              path: '/users/me',
+              method: 'GET',
+            }));
+            
+            if (userResponse && userResponse.id) {
+              usuarioId = userResponse.id;
+              console.log('ID de usuario obtenido desde Directus:', usuarioId);
+            }
+          } catch (directusError) {
+            console.warn('No se pudo obtener el usuario desde Directus:', directusError);
+          }
+        }
+      } catch (storeError) {
+        console.warn('No se pudo obtener el ID del usuario del store:', storeError);
+      }
+    }
+    
     // Crear una promesa con timeout para evitar que la operación se quede colgada
     const createPromise = directus.request(
       createItem('Vehiculo', {
         Placa: placa,
-        Tipo: tipo
+        Tipo: tipo,
+        Ciudad: "1", // Asignar automáticamente Ciudad: 1
+        Usuario: usuarioId // Asignar el ID del usuario activo si está disponible
       })
     );
     
@@ -495,5 +532,34 @@ export async function getUser(id) {
       Correo: 'No disponible',
       Telefono: 'No disponible'
     };
+  }
+}
+
+/**
+ * Obtiene un vehículo específico por su ID
+ * @param {string} id - ID del vehículo a obtener
+ * @returns {Promise<Object>} Datos del vehículo
+ */
+export async function getVehiculoById(id) {
+  try {
+    console.log('Obteniendo vehículo con ID:', id);
+    
+    // Obtener un vehículo específico desde Directus
+    // Solo solicitamos campos a los que sabemos que tenemos acceso
+    const vehiculo = await directus.request(readItems('Vehiculo', {
+      fields: ['id', 'Placa', 'Tipo', 'Usuario'],
+      filter: { id: { _eq: id } }
+    }));
+    
+    if (!vehiculo || vehiculo.length === 0) {
+      throw new Error('Vehículo no encontrado');
+    }
+    
+    console.log('Vehículo obtenido:', vehiculo[0]);
+    return vehiculo[0];
+  } catch (error) {
+    console.error(`Error al obtener vehículo con ID ${id}:`, error);
+    // Devolver null en caso de error
+    return null;
   }
 }

@@ -228,6 +228,39 @@ export const useAuthStore = create(
             expires
           });
           
+          // Si el usuario no tiene ID pero tenemos token, intentar obtener el ID desde Directus
+          if (user && !user.id && token) {
+            try {
+              console.log('Intentando obtener ID de usuario desde Directus después del login');
+              // Importar dinámicamente para evitar errores en SSR
+              const { directus } = await import('./api.js');
+              
+              // Obtener el usuario actual desde Directus usando el endpoint /users/me
+              const userResponse = await directus.request(() => ({
+                path: '/users/me',
+                method: 'GET',
+              }));
+              
+              if (userResponse && userResponse.id) {
+                console.log('ID de usuario obtenido desde Directus:', userResponse.id);
+                // Actualizar el usuario en el store con el ID
+                const updatedUser = { ...user, id: userResponse.id };
+                set({ user: updatedUser });
+                
+                // Actualizar también en el almacenamiento local
+                const currentSession = getAuthSession();
+                if (currentSession) {
+                  setAuthSession({ 
+                    ...currentSession,
+                    user: updatedUser
+                  });
+                }
+              }
+            } catch (error) {
+              console.warn('No se pudo obtener el ID del usuario desde Directus:', error);
+            }
+          }
+          
           // Validar la sesión con el servidor inmediatamente después del login
           try {
             await get().validateSession();

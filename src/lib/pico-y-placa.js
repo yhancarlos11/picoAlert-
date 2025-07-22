@@ -65,12 +65,12 @@ export async function puedeCircular(placa, fecha = new Date(), tipoVehiculoExent
       };
     }
 
-    // Verificar si está fuera del horario de restricción
+    // Verificar si está fuera del horario de restricción (6:00 AM a 9:00 PM)
     if (hora < 6 || hora >= 21) {
       console.log('Fuera de horario de restricción, puede circular', { hora });
       return { 
         puedeCircular: true, 
-        mensaje: 'Fuera de horario de restricción', 
+        mensaje: 'Fuera de horario de restricción (6:00 AM a 9:00 PM)', 
         reglaAplicada: null 
       };
     }
@@ -89,7 +89,7 @@ export async function puedeCircular(placa, fecha = new Date(), tipoVehiculoExent
     const reglas = await getReglasPicoYPlaca();
     
     // Registramos que estamos usando las reglas del endpoint
-    console.debug('Usando reglas de pico y placa del endpoint', reglas);
+    console.log('Usando reglas de pico y placa del endpoint', reglas);
 
     // Aplicar las reglas de pico y placa según el endpoint
     // Si el día es par, el pico y placa aplica para placas terminadas en los dígitos de item2
@@ -100,8 +100,20 @@ export async function puedeCircular(placa, fecha = new Date(), tipoVehiculoExent
     // Día impar -> item1 -> dígitos obtenidos del endpoint
     const digitosRestringidos = diaEsPar ? reglas.item2 : reglas.item1;
     
+    console.log('Dígitos restringidos para hoy:', {
+      diaEsPar,
+      digitosRestringidos,
+      ultimoDigito
+    });
+    
     // Verificar si el último dígito está restringido
     const estaRestringido = digitosRestringidos.includes(ultimoDigito);
+    
+    console.log('Verificación de restricción:', {
+      ultimoDigito,
+      digitosRestringidos,
+      estaRestringido
+    });
     
     // Si está restringido, NO puede circular (pico y placa aplica)
     const puedeCircular = !estaRestringido;
@@ -157,26 +169,42 @@ export async function puedeCircular(placa, fecha = new Date(), tipoVehiculoExent
  * Función para obtener el estado actual de pico y placa para una placa
  * @param {string} placa - Placa del vehículo
  * @param {boolean} tipoVehiculoExento - Si el vehículo está exento de la restricción
+ * @param {Date} [fecha=new Date()] - Fecha y hora para verificar (por defecto: fecha actual)
  * @returns {Promise<{estado: string, color: string, mensaje: string, detalles: object}>}
  */
-export async function getEstadoPicoYPlaca(placa, tipoVehiculoExento = false) {
+export async function getEstadoPicoYPlaca(placa, tipoVehiculoExento = false, fecha = new Date()) {
   try {
     // Convertir la placa a mayúsculas
     placa = placa.toUpperCase();
-    const fechaActual = new Date();
-    const resultado = await puedeCircular(placa, fechaActual, tipoVehiculoExento);
     
-    return {
+    // Registrar información de depuración
+    console.log('Verificando pico y placa para:', { 
+      placa, 
+      fecha: fecha.toISOString(), 
+      tipoVehiculoExento 
+    });
+    
+    const resultado = await puedeCircular(placa, fecha, tipoVehiculoExento);
+    
+    // Registrar el resultado para depuración
+    console.log('Resultado de puedeCircular:', resultado);
+    
+    const estadoFinal = {
       estado: resultado.puedeCircular ? 'PERMITIDO' : 'RESTRINGIDO',
       color: resultado.puedeCircular ? 'green' : 'red',
       mensaje: resultado.mensaje,
       detalles: {
         placa,
-        fecha: fechaActual.toISOString(),
+        fecha: fecha.toISOString(),
         tipoVehiculoExento,
         reglaAplicada: resultado.reglaAplicada
       }
     };
+    
+    // Registrar el estado final para depuración
+    console.log('Estado final calculado:', estadoFinal);
+    
+    return estadoFinal;
   } catch (error) {
     console.error('Error al obtener estado de pico y placa', { 
       message: error.message, 

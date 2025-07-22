@@ -1,9 +1,12 @@
 import { c as createComponent, a as createAstro, m as maybeRenderHead, r as renderComponent, f as renderScript, e as addAttribute, b as renderTemplate, u as unescapeHTML, F as Fragment } from './astro/server_BJY87dAg.mjs';
 import 'kleur/colors';
 import { b as $$LogoutButton } from './Footer_BBt6Hjop.mjs';
+import 'clsx';
+import { p as push, a as pop } from './_@astro-renderers_BbfvC7Tx.mjs';
 
 const Icons = {
   Home: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-home"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+  Theme: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sun-moon"><path d="M12 8a2.83 2.83 0 0 0 4 4 4 4 0 1 1-4-4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.9 4.9 1.4 1.4"/><path d="m17.7 17.7 1.4 1.4"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.3 17.7-1.4 1.4"/><path d="m19.1 4.9-1.4 1.4"/></svg>',
   Car: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-car"><path d="M19 17H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2Z"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>',
   Users: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87L16 3"/><path d="M16 3a4 4 0 0 1 0 8v1"/></svg>',
   Calendar: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>',
@@ -16,12 +19,26 @@ const Icons = {
   Car1: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-car-front-icon lucide-car-front"><path d="m21 8-2 2-1.5-3.7A2 2 0 0 0 15.646 5H8.4a2 2 0 0 0-1.903 1.257L5 10 3 8"/><path d="M7 14h.01"/><path d="M17 14h.01"/><rect width="18" height="8" x="3" y="10" rx="2"/><path d="M5 18v2"/><path d="M19 18v2"/></svg>'
 };
 
+function ThemeSwitcher($$payload, $$props) {
+	push();
+
+	$$payload.out += `<button type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5">`;
+
+	{
+		$$payload.out += '<!--[-->';
+		$$payload.out += `<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>`;
+	}
+
+	$$payload.out += `<!--]--></button>`;
+	pop();
+}
+
 const $$Astro = createAstro();
 const $$Sidebar = createComponent(($$result, $$props, $$slots) => {
   const Astro2 = $$result.createAstro($$Astro, $$props, $$slots);
   Astro2.self = $$Sidebar;
   const { title, links } = Astro2.props;
-  return renderTemplate`${maybeRenderHead()}<aside class="w-64 bg-white text-gray-800 p-4 dark:bg-gray-800 dark:text-white fixed h-full hidden md:block"> <h2 class="text-2xl font-bold mb-6 text-primary-500 dark:text-primary-300">${title}</h2> <nav> <ul> ${links.map((link) => renderTemplate`<li class="mb-2"> <a${addAttribute(link.href, "href")} class="flex items-center hover:bg-primary-50 dark:hover:bg-gray-700 p-2 rounded text-gray-700 hover:text-primary-500 dark:text-gray-300 dark:hover:text-primary-300"> ${renderComponent($$result, "Fragment", Fragment, {}, { "default": ($$result2) => renderTemplate`${unescapeHTML(Icons[link.icon])}` })} <span class="ml-2">${link.text}</span> </a> </li>`)} <li class="mb-2 mt-8"> ${renderComponent($$result, "LogoutButton", $$LogoutButton, { "variant": "sidebar" })} </li> </ul> </nav> </aside> <!-- Mobile Menu Button --> <div class="md:hidden fixed top-4 left-4 z-50"> <button id="mobile-menu-button" class="p-2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white"> ${renderComponent($$result, "Fragment", Fragment, {}, { "default": ($$result2) => renderTemplate`${unescapeHTML(Icons.Menu)}` })} </button> </div> ${renderScript($$result, "D:/Github/picolalert/src/components/Sidebar.astro?astro&type=script&index=0&lang.ts")}`;
+  return renderTemplate`${maybeRenderHead()}<aside class="w-64 bg-white text-gray-800 p-4 dark:bg-gray-800 dark:text-white fixed h-full hidden md:block"> <!-- Logo y nombre de la aplicación --> <div class="flex items-center mb-6"> <img src="/logo/logo.png" class="h-8 mr-2" alt="Picolalert Logo"> <span class="text-xl font-semibold text-primary-500 dark:text-white">Picolalert</span> </div> <!-- Botón de cambio de tema en la parte superior --> <div class="mb-6 flex items-center justify-between bg-gray-100 dark:bg-gray-700 p-2 rounded"> <div class="flex items-center"> ${renderComponent($$result, "Fragment", Fragment, {}, { "default": ($$result2) => renderTemplate`${unescapeHTML(Icons.Theme)}` })} <span class="ml-2">Tema</span> </div> ${renderComponent($$result, "ThemeSwitcher", ThemeSwitcher, { "client:load": true, "client:component-hydration": "load", "client:component-path": "D:/Github/picolalert/src/components/ThemeSwitcher.svelte", "client:component-export": "default" })} </div> <h2 class="text-lg font-bold mb-4 text-primary-500 dark:text-primary-300">${title}</h2> <nav> <ul> ${links.map((link) => renderTemplate`<li class="mb-2"> <a${addAttribute(link.href, "href")} class="flex items-center hover:bg-primary-50 dark:hover:bg-gray-700 p-2 rounded text-gray-700 hover:text-primary-500 dark:text-gray-300 dark:hover:text-primary-300"> ${renderComponent($$result, "Fragment", Fragment, {}, { "default": ($$result2) => renderTemplate`${unescapeHTML(Icons[link.icon])}` })} <span class="ml-2">${link.text}</span> </a> </li>`)} <li class="mb-2 mt-8"> ${renderComponent($$result, "LogoutButton", $$LogoutButton, { "variant": "sidebar" })} </li> </ul> </nav> </aside> <!-- Mobile Menu Button --> <div class="md:hidden fixed top-4 left-4 z-50"> <button id="mobile-menu-button" class="p-2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white"> ${renderComponent($$result, "Fragment", Fragment, {}, { "default": ($$result2) => renderTemplate`${unescapeHTML(Icons.Menu)}` })} </button> </div> ${renderScript($$result, "D:/Github/picolalert/src/components/Sidebar.astro?astro&type=script&index=0&lang.ts")}`;
 }, "D:/Github/picolalert/src/components/Sidebar.astro", void 0);
 
 export { $$Sidebar as $ };

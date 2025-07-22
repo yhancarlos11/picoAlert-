@@ -9,6 +9,12 @@ import { getVehiculos, getReglasPicoYPlaca } from '../lib/api.js';
 import PicoPlacaStatus from '../components/PicoPlacaStatus.astro';
 import StatusMessage from '../components/StatusMessage.astro';
 
+// Definir la interfaz para las reglas de Pico y Placa
+interface ReglasPicoYPlaca {
+  item1: string[];
+  item2: string[];
+}
+
 // Obtener fecha actual formateada
 const hoy = new Date();
 const fechaFormateada = hoy.toLocaleDateString('es-ES', {
@@ -19,7 +25,7 @@ const fechaFormateada = hoy.toLocaleDateString('es-ES', {
 });
 
 // Obtener las reglas de pico y placa desde el endpoint
-const reglas = await getReglasPicoYPlaca();
+const reglas = await getReglasPicoYPlaca() as ReglasPicoYPlaca;
 
 // Determinar los dígitos restringidos hoy
 const esDiaImpar = hoy.getDate() % 2 !== 0;
@@ -33,11 +39,15 @@ const vehiculos = await getVehiculos();
 const vehiculoUsuario = vehiculos.length > 0 ? vehiculos[0] : null;
 
 // Ejemplos de placas para demostración
+// Aseguramos que los ejemplos tengan diferentes últimos dígitos para mostrar diferentes estados
 const ejemplos = [
-  { placa: 'ABC123', tipoVehiculoExento: false, descripcion: 'Vehículo particular' },
-  { placa: 'XYZ456', tipoVehiculoExento: false, descripcion: 'Vehículo particular' },
+  { placa: 'ABC123', tipoVehiculoExento: false, descripcion: 'Vehículo particular (último dígito: 3)' },
+  { placa: 'XYZ456', tipoVehiculoExento: false, descripcion: 'Vehículo particular (último dígito: 6)' },
   { placa: 'DEF789', tipoVehiculoExento: true, descripcion: 'Vehículo exento (ej. servicio público)' }
 ];
+
+// Registramos los ejemplos para depuración
+console.log('Ejemplos de placas para demostración:', ejemplos);
 
 // Fechas para demostración
 const fechasDemo = [
@@ -64,7 +74,7 @@ const fechasDemo = [
                 ) : (
                     <div class="p-4 bg-yellow-100 text-yellow-800 rounded-lg dark:bg-yellow-800 dark:text-yellow-100 mb-4">
                         <p class="text-center text-lg font-medium">Hoy aplica restricción para placas terminadas en: <span class="font-bold">{digitosRestringidos}</span></p>
-                        <p class="text-center mt-2">Horario de restricción: 6:00 AM - 8:30 AM y 3:00 PM - 7:30 PM</p>
+                        <p class="text-center mt-2">Horario de restricción: 6:00 AM - 9:00 PM</p>
                     </div>
                 )}
                 
@@ -212,8 +222,18 @@ const fechasDemo = [
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {ejemplos.map((ejemplo) => (
                         <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                            <h3 class="text-lg font-medium text-gray-800 dark:text-white mb-2">Placa: {ejemplo.placa}</h3>
-                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">{ejemplo.descripcion}</p>
+                            <div class="flex items-center mb-3">
+                                <img 
+                                    src={`/img_tipo_vehiculo/${ejemplo.placa.startsWith('ABC') ? 'automovil' : ejemplo.placa.startsWith('XYZ') ? 'Camioneta' : 'Motocarro'}.jpg`} 
+                                    alt={`Tipo de vehículo ${ejemplo.descripcion}`}
+                                    class="w-12 h-12 object-cover rounded-full mr-3"
+                                    onerror="this.onerror=null; this.src='/img_tipo_vehiculo/automovil.jpg';"
+                                />
+                                <div>
+                                    <h3 class="text-lg font-medium text-gray-800 dark:text-white">Placa: {ejemplo.placa}</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">{ejemplo.descripcion}</p>
+                                </div>
+                            </div>
                             
                             <PicoPlacaStatus 
                                 placa={ejemplo.placa} 

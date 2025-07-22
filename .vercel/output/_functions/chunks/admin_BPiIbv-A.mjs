@@ -1,7 +1,7 @@
 import { c as createComponent, a as createAstro, r as renderComponent, b as renderTemplate, m as maybeRenderHead, d as renderSlot } from './astro/server_BJY87dAg.mjs';
 import 'kleur/colors';
 import { $ as $$Base, a as $$Footer } from './Footer_BBt6Hjop.mjs';
-import { $ as $$Sidebar } from './Sidebar_CenvZ1bK.mjs';
+import { $ as $$Sidebar } from './Sidebar_CqEgEZdr.mjs';
 
 const $$Astro = createAstro();
 const $$Admin = createComponent(($$result, $$props, $$slots) => {

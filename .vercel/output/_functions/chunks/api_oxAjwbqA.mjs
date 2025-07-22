@@ -32,7 +32,7 @@ async function getVehiculos() {
 
 /**
  * Obtiene las reglas de pico y placa desde el endpoint
- * @returns {Promise<Object>} Objeto con las reglas de pico y placa
+ * @returns {Promise<{item1: string[], item2: string[]}>} Objeto con las reglas de pico y placa
  */
 async function getReglasPicoYPlaca() {
   try {
@@ -213,4 +213,33 @@ async function getUser(id) {
   }
 }
 
-export { getUser as a, getVehiculos as b, createDirectusUser as c, getUsers as d, getReglasPicoYPlaca as g };
+/**
+ * Obtiene un vehículo específico por su ID
+ * @param {string} id - ID del vehículo a obtener
+ * @returns {Promise<Object>} Datos del vehículo
+ */
+async function getVehiculoById(id) {
+  try {
+    console.log('Obteniendo vehículo con ID:', id);
+    
+    // Obtener un vehículo específico desde Directus
+    // Solo solicitamos campos a los que sabemos que tenemos acceso
+    const vehiculo = await directus.request(readItems('Vehiculo', {
+      fields: ['id', 'Placa', 'Tipo', 'Usuario'],
+      filter: { id: { _eq: id } }
+    }));
+    
+    if (!vehiculo || vehiculo.length === 0) {
+      throw new Error('Vehículo no encontrado');
+    }
+    
+    console.log('Vehículo obtenido:', vehiculo[0]);
+    return vehiculo[0];
+  } catch (error) {
+    console.error(`Error al obtener vehículo con ID ${id}:`, error);
+    // Devolver null en caso de error
+    return null;
+  }
+}
+
+export { getUser as a, getVehiculos as b, createDirectusUser as c, getVehiculoById as d, getUsers as e, getReglasPicoYPlaca as g };

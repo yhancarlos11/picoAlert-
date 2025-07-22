@@ -1,0 +1,1 @@
+import{useAuthStore as o}from"./auth-store.whEsov_B.js";import"./api.yQKbUgAA.js";document.addEventListener("DOMContentLoaded",()=>{const t=document.getElementById("navbar-logout-btn");t&&t.addEventListener("click",async()=>{await o.getState().logout(),window.location.href="/login"})});

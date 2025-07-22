@@ -33,6 +33,7 @@ import StatusMessage from '../../components/StatusMessage.astro';
                     <h3 class="text-lg font-semibold text-green-900 dark:text-green-100 mb-2">Estado Hoy</h3>
                     <p id="pico-status" class="text-3xl font-bold text-green-600 dark:text-green-400">-</p>
                     <p class="text-sm text-green-700 dark:text-green-300">Pico y Placa</p>
+                    <p class="text-xs text-green-700 dark:text-green-300 mt-1">Restricción: 6:00 AM - 9:00 PM</p>
                     <!-- Loading indicator for Pico y Placa -->
                     <div id="loading-pico-placa" class="hidden mt-2">
                         <div class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-green-600 dark:border-green-400"></div>
@@ -549,26 +550,34 @@ import StatusMessage from '../../components/StatusMessage.astro';
                     // Crear un fragmento para mejorar el rendimiento
                     const fragment = document.createDocumentFragment();
                     
-                    displayVehicles.forEach(vehicle => {
+                    for (const vehicle of displayVehicles) {
                         if (vehicle && typeof vehicle === 'object') {
                             try {
-                                const vehicleCard = createVehicleCard(vehicle);
-                                fragment.appendChild(vehicleCard);
+                                const vehicleCard = await createVehicleCard(vehicle);
+                                if (vehicleCard) {
+                                    fragment.appendChild(vehicleCard);
+                                } else {
+                                    console.error('La tarjeta de vehículo es null o undefined');
+                                }
                             } catch (cardError) {
                                 console.error('Error al crear tarjeta de vehículo:', cardError);
                             }
                         } else {
                             console.warn('Vehículo inválido encontrado:', vehicle);
                         }
-                    });
+                    }
                     
                     // Agregar todas las tarjetas de una vez
                     vehiclesContainer.appendChild(fragment);
                     
                     if (vehicles.length > 3) {
                         try {
-                            const moreCard = createMoreVehiclesCard(vehicles.length - 3);
-                            vehiclesContainer.appendChild(moreCard);
+                            const moreCard = await createMoreVehiclesCard(vehicles.length - 3);
+                            if (moreCard) {
+                                vehiclesContainer.appendChild(moreCard);
+                            } else {
+                                console.error('La tarjeta de "Ver más" es null o undefined');
+                            }
                         } catch (moreCardError) {
                             console.error('Error al crear tarjeta de "Ver más":', moreCardError);
                         }
@@ -631,7 +640,7 @@ import StatusMessage from '../../components/StatusMessage.astro';
                 reloadButton.addEventListener('click', loadUserVehicles);
             }
         });
-        function createVehicleCard(vehicle: any) {
+        async function createVehicleCard(vehicle: any) {
             if (!vehicle || typeof vehicle !== 'object') {
                 console.error('Datos de vehículo inválidos:', vehicle);
                 const errorCard = document.createElement('div');
@@ -655,56 +664,32 @@ import StatusMessage from '../../components/StatusMessage.astro';
                 let statusClass = 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
                 
                 try {
-                    const today = new Date();
-                    const dayOfWeek = today.getDay(); // 0 = domingo, 1 = lunes, ..., 6 = sábado
+                    // Importar la función getEstadoPicoYPlaca
+                    const getEstadoPicoYPlacaModule = await import('../../lib/pico-y-placa.js');
+                    const getEstadoPicoYPlaca = getEstadoPicoYPlacaModule.getEstadoPicoYPlaca;
                     
-                    // No hay Pico y Placa los fines de semana
-                    if (dayOfWeek === 0 || dayOfWeek === 6) {
-                        picoPlacaStatus = 'Libre';
-                        statusClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-                    } else {
-                        // Obtener el último dígito de la placa
-                        const lastDigit = placa.trim().slice(-1);
-                        const numericLastDigit = parseInt(lastDigit);
+                    // Verificar si la placa es válida
+                    if (placa && placa !== 'Sin placa') {
+                        // Obtener el estado de pico y placa usando la función de la librería
+                        // que utiliza la fecha actual y las reglas dinámicas
+                        const estadoPicoYPlaca = await getEstadoPicoYPlaca(placa);
                         
-                        if (isNaN(numericLastDigit)) {
+                        console.log('Estado de pico y placa obtenido:', estadoPicoYPlaca);
+                        
+                        // Mapear el estado a los valores que necesitamos para la UI
+                        if (estadoPicoYPlaca.estado === 'PERMITIDO') {
+                            picoPlacaStatus = 'Libre';
+                            statusClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+                        } else if (estadoPicoYPlaca.estado === 'RESTRINGIDO') {
+                            picoPlacaStatus = 'Restringido';
+                            statusClass = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+                        } else {
                             picoPlacaStatus = 'Verificar';
                             statusClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
-                        } else {
-                            // Determinar si el vehículo tiene restricción hoy
-                            let restriccionHoy = false;
-                            
-                            switch (dayOfWeek) {
-                                case 1: // Lunes - 6,7,8,9,0
-                                    restriccionHoy = [6,7,8,9,0].includes(numericLastDigit);
-                                    break;
-                                case 2: // Martes - 1,2,3,4,5
-                                    restriccionHoy = [1,2,3,4,5].includes(numericLastDigit);
-                                    break;
-                                case 3: // Miércoles - 6,7,8,9,0
-                                    restriccionHoy = [6,7,8,9,0].includes(numericLastDigit);
-                                    break;
-                                case 4: // Jueves - 1,2,3,4,5
-                                    restriccionHoy = [1,2,3,4,5].includes(numericLastDigit);
-                                    break;
-                                case 5: // Viernes - alternancia
-                                    const date = today.getDate();
-                                    if (date % 2 === 0) { // Fecha par
-                                        restriccionHoy = [1,2,3,4,5].includes(numericLastDigit);
-                                    } else { // Fecha impar
-                                        restriccionHoy = [6,7,8,9,0].includes(numericLastDigit);
-                                    }
-                                    break;
-                            }
-                            
-                            if (restriccionHoy) {
-                                picoPlacaStatus = 'Restringido';
-                                statusClass = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-                            } else {
-                                picoPlacaStatus = 'Libre';
-                                statusClass = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-                            }
                         }
+                    } else {
+                        picoPlacaStatus = 'Verificar';
+                        statusClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
                     }
                 } catch (picoPlacaError) {
                     console.error('Error al determinar estado de Pico y Placa:', picoPlacaError);
@@ -715,13 +700,21 @@ import StatusMessage from '../../components/StatusMessage.astro';
                 card.innerHTML = `
                     <div class="flex items-center justify-between mb-2">
                         <h4 class="text-lg font-semibold text-gray-900 dark:text-white">${placa}</h4>
-                        <span class="px-2 py-1 text-xs font-medium rounded-full ${
-                            tipo.toLowerCase().includes('carro') ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
-                            tipo.toLowerCase() === 'moto' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
-                            'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300'
-                        }">
-                            ${tipo.replace('_', ' ')}
-                        </span>
+                        <div class="flex items-center">
+                            <img 
+                                src="/img_tipo_vehiculo/${tipo === 'Automovil' ? 'automovil' : tipo}.jpg" 
+                                alt="Imagen de ${tipo}" 
+                                class="w-8 h-8 object-cover rounded-full mr-2 shadow-sm"
+                                onerror="this.src='/img_tipo_vehiculo/automovil.jpg'; this.onerror=null;"
+                            />
+                            <span class="px-2 py-1 text-xs font-medium rounded-full ${
+                                tipo.toLowerCase().includes('carro') ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
+                                tipo.toLowerCase() === 'moto' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
+                                'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300'
+                            }">
+                                ${tipo.replace('_', ' ')}
+                            </span>
+                        </div>
                     </div>
                     <div class="text-sm text-gray-600 dark:text-gray-400 mb-3">${modelo ? modelo : 'Vehículo registrado'}</div>
                     <div class="flex justify-between items-center">
@@ -759,7 +752,7 @@ import StatusMessage from '../../components/StatusMessage.astro';
             return card;
         }
         
-        function createMoreVehiclesCard(count: number) {
+        async function createMoreVehiclesCard(count: number) {
             // Validar que count sea un número válido
             if (typeof count !== 'number' || isNaN(count) || count < 0) {
                 count = 0; // Valor por defecto si count no es válido

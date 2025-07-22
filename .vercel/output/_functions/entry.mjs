@@ -1,6 +1,6 @@
-import { renderers } from './renderers.mjs';
+import { r as renderers } from './chunks/_@astro-renderers_BbfvC7Tx.mjs';
 import { c as createExports } from './chunks/entrypoint_nnHBjsJb.mjs';
-import { manifest } from './manifest_D0vJ_A4F.mjs';
+import { manifest } from './manifest_Dy-4Rspo.mjs';
 
 const serverIslandMap = new Map();;
 
@@ -20,8 +20,8 @@ const _page12 = () => import('./pages/user/dashboard.astro.mjs');
 const _page13 = () => import('./pages/user/movility-suggestion.astro.mjs');
 const _page14 = () => import('./pages/user/notifications.astro.mjs');
 const _page15 = () => import('./pages/user/pico-y-placa.astro.mjs');
-const _page16 = () => import('./pages/user/pico-y-placa-details.astro.mjs');
-const _page17 = () => import('./pages/user/register-vehicle.astro.mjs');
+const _page16 = () => import('./pages/user/register-vehicle.astro.mjs');
+const _page17 = () => import('./pages/user/vehicle-details/_id_.astro.mjs');
 const _page18 = () => import('./pages/user/vehicles.astro.mjs');
 const _page19 = () => import('./pages/index.astro.mjs');
 const pageMap = new Map([
@@ -41,8 +41,8 @@ const pageMap = new Map([
     ["src/pages/user/movility-suggestion.astro", _page13],
     ["src/pages/user/notifications.astro", _page14],
     ["src/pages/user/pico-y-placa.astro", _page15],
-    ["src/pages/user/pico-y-placa-details.astro", _page16],
-    ["src/pages/user/register-vehicle.astro", _page17],
+    ["src/pages/user/register-vehicle.astro", _page16],
+    ["src/pages/user/vehicle-details/[id].astro", _page17],
     ["src/pages/user/vehicles.astro", _page18],
     ["src/pages/index.astro", _page19]
 ]);
@@ -55,7 +55,7 @@ const _manifest = Object.assign(manifest, {
     middleware: () => import('./_noop-middleware.mjs')
 });
 const _args = {
-    "middlewareSecret": "0046589d-e754-4b43-bb17-34a4a294161b",
+    "middlewareSecret": "0bb3a5aa-0262-42d7-9071-311629f7f531",
     "skewProtection": false
 };
 const _exports = createExports(_manifest, _args);
