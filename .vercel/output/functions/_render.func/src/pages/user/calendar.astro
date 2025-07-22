@@ -1,0 +1,129 @@
+---
+import UserLayout from '../../layout/user.astro';
+
+// Obtener parámetros de la URL para el mes y año
+const { month: monthParam, year: yearParam } = Astro.url.searchParams;
+
+// Obtener la fecha actual
+const today = new Date();
+const todayDate = today.getDate();
+const todayMonth = today.getMonth();
+const todayYear = today.getFullYear();
+
+// Usar los parámetros de la URL o la fecha actual
+// Convertir de base 1 (URL) a base 0 (JavaScript)
+const currentMonth = monthParam ? parseInt(monthParam) - 1 : today.getMonth();
+const currentYear = yearParam ? parseInt(yearParam) : today.getFullYear();
+const currentDate = (currentMonth === todayMonth && currentYear === todayYear) ? todayDate : null;
+
+// Calcular mes anterior y siguiente (en base 1 para la URL)
+// Para el mes anterior: si estamos en enero (0), vamos a diciembre (12) del año anterior
+// Para los demás meses, restamos 1 y sumamos 1 (para convertir de base 0 a base 1)
+const prevMonthJS = currentMonth === 0 ? 11 : currentMonth - 1; // Base 0 para JavaScript
+const prevMonth = prevMonthJS + 1; // Base 1 para URL
+const prevMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+// Para el mes siguiente: si estamos en diciembre (11), vamos a enero (1) del año siguiente
+// Para los demás meses, sumamos 1 y sumamos 1 (para convertir de base 0 a base 1)
+const nextMonthJS = currentMonth === 11 ? 0 : currentMonth + 1; // Base 0 para JavaScript
+const nextMonth = nextMonthJS + 1; // Base 1 para URL
+const nextMonthYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+
+
+// Nombres de los meses en español
+const monthNames = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
+// Obtener el primer día del mes (0 = Domingo, 1 = Lunes, ...)
+const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+// Ajustar para que la semana comience en lunes (0 = Lunes, 6 = Domingo)
+const firstDayAdjusted = firstDay === 0 ? 6 : firstDay - 1;
+
+// Obtener el número de días en el mes actual
+const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+// Crear matriz para el calendario
+const calendar = [];
+let day = 1;
+let weekRow = [];
+
+// Rellenar los espacios vacíos antes del primer día del mes
+for (let i = 0; i < firstDayAdjusted; i++) {
+  weekRow.push(null);
+}
+
+// Rellenar los días del mes
+while (day <= daysInMonth) {
+  // Si la fila actual está llena (7 días), comenzar una nueva fila
+  if (weekRow.length === 7) {
+    calendar.push([...weekRow]);
+    weekRow = [];
+  }
+  
+  weekRow.push(day);
+  day++;
+}
+
+// Rellenar los espacios vacíos después del último día del mes
+while (weekRow.length < 7) {
+  weekRow.push(null);
+}
+
+// Añadir la última fila al calendario
+if (weekRow.length > 0) {
+  calendar.push([...weekRow]);
+}
+---
+
+<UserLayout>
+  <section class="bg-white dark:bg-gray-900">
+    <div class="py-8 px-4 mx-auto max-w-screen-xl lg:py-16">
+        <h2 class="mb-4 text-4xl tracking-tight font-extrabold leading-tight text-gray-900 dark:text-white">Calendario de Pico y Placa</h2>
+        <div class="flex justify-between items-center mb-6">
+            <a href={`/user/calendar?month=${prevMonth}&year=${prevMonthYear}`} class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg">
+                &larr; Mes anterior
+            </a>
+            <h3 class="text-2xl font-bold text-gray-700 dark:text-gray-300">{monthNames[currentMonth]} {currentYear}</h3>
+            <a href={`/user/calendar?month=${nextMonth}&year=${nextMonthYear}`} class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg">
+                Mes siguiente &rarr;
+            </a>
+        </div>
+        <a href="/user/calendar" class="inline-block mb-6 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg">
+            Volver al mes actual
+        </a>
+        <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+            <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                    <tr>
+                        <th scope="col" class="px-6 py-3">Lun</th>
+                        <th scope="col" class="px-6 py-3">Mar</th>
+                        <th scope="col" class="px-6 py-3">Mié</th>
+                        <th scope="col" class="px-6 py-3">Jue</th>
+                        <th scope="col" class="px-6 py-3">Vie</th>
+                        <th scope="col" class="px-6 py-3">Sáb</th>
+                        <th scope="col" class="px-6 py-3">Dom</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {calendar.map((week) => (
+                        <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                            {week.map((day) => (
+                                <td class={`px-6 py-4 ${day === currentDate ? 'font-bold text-blue-600 bg-blue-100 dark:bg-blue-900 dark:text-blue-300' : ''} ${day === null ? 'text-gray-300 dark:text-gray-600' : ''}`}>
+                                    {day !== null ? day : ''}
+                                </td>
+                            ))}
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-6 p-4 bg-blue-100 dark:bg-blue-900 rounded-lg">
+            <p class="text-gray-700 dark:text-gray-300">
+                <span class="font-bold">Nota:</span> El día actual está resaltado en azul. Recuerda que las restricciones de Pico y Placa aplican de lunes a viernes.
+            </p>
+        </div>
+    </div>
+  </section>
+</UserLayout>

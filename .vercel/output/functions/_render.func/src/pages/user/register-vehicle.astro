@@ -1,0 +1,261 @@
+---
+import UserLayout from "../../layout/user.astro";
+import PageHeader from "../../components/PageHeader.astro";
+import StatusMessage from "../../components/StatusMessage.astro";
+---
+
+<UserLayout title="Registrar Vehículo - PicoAlert+" description="Registra un nuevo vehículo en PicoAlert+ para recibir notificaciones de Pico y Placa.">
+    <section class="bg-white dark:bg-gray-900">
+        <div class="py-8 px-4 mx-auto max-w-2xl lg:py-16">
+            <!-- Header utilizando el componente PageHeader -->
+            <PageHeader 
+                title="Registrar Nuevo Vehículo" 
+                description="Agrega un vehículo para recibir notificaciones de Pico y Placa"
+                backUrl="/user/dashboard"
+                backText="Volver al Dashboard"
+            />
+
+            <!-- Mensajes de estado utilizando el componente StatusMessage -->
+            <StatusMessage />
+
+            <!-- Formulario -->
+            <form id="vehicle-form" class="space-y-6">
+                <div class="grid gap-6 sm:grid-cols-2">
+                    <!-- Placa -->
+                    <div class="sm:col-span-2">
+                        <label for="placa" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                            Placa del Vehículo *
+                        </label>
+                        <input type="text" 
+                               id="placa" 
+                               name="placa" 
+                               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" 
+                               placeholder="Ej: ABC123" 
+                               required 
+                               maxlength="10"
+                               style="text-transform: uppercase;">
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Ingresa la placa sin espacios ni guiones</p>
+                    </div>
+
+                    <!-- Tipo de Vehículo -->
+                    <div class="sm:col-span-2">
+                        <label for="tipo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                            Tipo de Vehículo *
+                        </label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <select id="tipo" 
+                                        name="tipo" 
+                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500" 
+                                        required>
+                                    <option value="">Selecciona el tipo</option>
+                                    <option value="Automovil">Automóvil</option>
+                                    <option value="Motocarro">Motocarro</option>
+                                    <option value="Cuatrimoto">Cuatrimoto</option>
+                                    <option value="Campero">Campero</option>
+                                    <option value="Camioneta">Camioneta</option>
+                                    <option value="Microbus">Microbús</option>
+                                </select>
+                            </div>
+                            <div class="flex justify-center items-center">
+                                <img 
+                                    id="vehicle-type-preview" 
+                                    src="/img_tipo_vehiculo/automovil.jpg" 
+                                    alt="Vista previa del tipo de vehículo"
+                                    class="w-24 h-24 object-cover rounded-lg shadow-sm"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="flex items-center space-x-4">
+                    <button type="submit" 
+                            id="submit-btn"
+                            class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-center text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">
+                        <svg id="submit-spinner" class="hidden animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span id="submit-text">Registrar Vehículo</span>
+                    </button>
+                    
+                    <a href="/user/dashboard" 
+                       class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <script>
+        import { useAuthStore } from '../../lib/auth-store.js';
+        import { createVehiculo, isAuthenticated } from '../../lib/api.js';
+        
+        // Declare global functions from StatusMessage component
+        declare global {
+            interface Window {
+                showSuccessMessage: (message: string) => void;
+                showErrorMessage: (message: string) => void;
+                hideMessages: () => void;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const authStore = useAuthStore.getState();
+            
+            // Verificar autenticación tanto en el store como en Directus
+            if (!authStore.isAuthenticated) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            // Verificar también la autenticación en Directus
+            try {
+                const authResult = await isAuthenticated();
+                if (typeof authResult === 'object' && authResult !== null && 'isAuthenticated' in authResult && !authResult.isAuthenticated) {
+                    console.error('La sesión de Directus ha expirado');
+                    // Actualizar el estado de autenticación en el store
+                    authStore.logout();
+                    window.location.href = '/login?session=expired';
+                    return;
+                }
+            } catch (error) {
+                console.error('Error al verificar autenticación:', error);
+                // No redirigir inmediatamente en caso de error de verificación
+                // para evitar ciclos de redirección
+            }
+            const form = document.getElementById('vehicle-form');
+            const submitBtn = document.getElementById('submit-btn');
+            const submitSpinner = document.getElementById('submit-spinner');
+            const submitText = document.getElementById('submit-text');
+            
+            // Formatear placa en mayúsculas
+            const placaInput = document.getElementById('placa');
+            if (placaInput) {
+                placaInput.addEventListener('input', function(e) {
+                    const target = e.target as HTMLInputElement;
+                    target.value = target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                });
+            }
+            
+            // Actualizar la imagen de vista previa cuando cambia el tipo de vehículo
+            const tipoSelect = document.getElementById('tipo');
+            const vehiclePreview = document.getElementById('vehicle-type-preview');
+            
+            if (tipoSelect && vehiclePreview) {
+                tipoSelect.addEventListener('change', function(e) {
+                    const target = e.target as HTMLSelectElement;
+                    const selectedType = target.value;
+                    
+                    if (selectedType) {
+                        // Actualizar la imagen según el tipo seleccionado
+                        const imgPath = `/img_tipo_vehiculo/${selectedType === 'Automovil' ? 'automovil' : selectedType}.jpg`;
+                        vehiclePreview.setAttribute('src', imgPath);
+                        vehiclePreview.setAttribute('alt', `Vista previa de ${selectedType}`);
+                        
+                        // Configurar manejo de errores para la imagen
+                        vehiclePreview.onerror = function() {
+                            vehiclePreview.setAttribute('src', '/img_tipo_vehiculo/automovil.jpg');
+                            vehiclePreview.onerror = null;
+                        };
+                    } else {
+                        // Si no hay tipo seleccionado, mostrar imagen por defecto
+                        vehiclePreview.setAttribute('src', '/img_tipo_vehiculo/automovil.jpg');
+                    }
+                });
+            }
+            
+            form?.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                // Mostrar estado de carga
+                if (submitBtn instanceof HTMLButtonElement) {
+                    submitBtn.disabled = true;
+                }
+                submitSpinner?.classList.remove('hidden');
+                if (submitText) {
+                    submitText.textContent = 'Registrando...';
+                }
+                window.hideMessages();
+                
+                try {
+                    if (!form) {
+                        throw new Error('Formulario no encontrado');
+                    }
+                    const formData = new FormData(form as HTMLFormElement);
+                    
+                    // Validar campos requeridos
+                    const requiredFields = ['placa', 'tipo'];
+                    for (const field of requiredFields) {
+                        if (!formData.get(field)) {
+                            throw new Error(`El campo ${field} es requerido`);
+                        }
+                    }
+                    
+                    // Validar formato de placa
+                    const placa = formData.get('placa');
+                    if (placa && typeof placa === 'string' && (placa.length < 5 || placa.length > 7)) {
+                        throw new Error('La placa debe tener entre 5 y 7 caracteres');
+                    }
+                    
+                    // Crear objeto del vehículo
+                    const tipo = formData.get('tipo');
+                    
+                    // Enviar al servidor con los parámetros individuales
+                    if (typeof placa === 'string' && typeof tipo === 'string') {
+                        const result = await createVehiculo(placa, tipo);
+                        
+                        // Mostrar mensaje de éxito
+                        window.showSuccessMessage('¡Vehículo registrado exitosamente!');
+                    } else {
+                        throw new Error('Los valores de placa y tipo deben ser cadenas de texto');
+                    }
+                    
+                    // Limpiar formulario
+                    (form as HTMLFormElement).reset();
+                    
+                    // Redirigir después de 2 segundos
+                    setTimeout(() => {
+                        window.location.href = '/user/dashboard';
+                    }, 2000);
+                    
+                } catch (error: unknown) {
+                    console.error('Error registering vehicle:', error);
+                    
+                    // Verificar si el error está relacionado con la autenticación
+                    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+                    if (errorMessage && (errorMessage.includes('sesión') || errorMessage.includes('autenticación') || errorMessage.includes('token'))) {
+                        // Mostrar un mensaje más específico
+                        window.showErrorMessage('Tu sesión ha expirado. Serás redirigido para iniciar sesión nuevamente.');
+                        
+                        // Redirigir después de 2 segundos
+                        setTimeout(() => {
+                            // Actualizar el estado de autenticación en el store
+                            const authStore = useAuthStore.getState();
+                            authStore.logout();
+                            window.location.href = '/login?session=expired';
+                        }, 2000);
+                    } else {
+                        // Para otros errores, mostrar el mensaje normal
+                        window.showErrorMessage(error instanceof Error ? error.message : 'Error al registrar el vehículo. Por favor, intenta de nuevo.');
+                    }
+                } finally {
+                    // Restaurar estado del botón
+                    if (submitBtn instanceof HTMLButtonElement) {
+                        submitBtn.disabled = false;
+                    }
+                    submitSpinner?.classList.add('hidden');
+                    if (submitText) {
+                        submitText.textContent = 'Registrar Vehículo';
+                    }
+                }
+            });
+            
+            // Usamos las funciones globales definidas en el componente StatusMessage.astro
+            // No necesitamos definir estas funciones localmente
+        });
+    </script>
+</UserLayout>
